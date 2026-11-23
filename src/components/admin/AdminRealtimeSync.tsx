@@ -13,7 +13,6 @@ export function AdminRealtimeSync({ eventId }: { eventId: string }) {
     const supabase = createBrowserSupabaseClient();
 
     const triggerRefresh = () => {
-      // Debounce slightly because a single vote updates both `teams` and `events`
       if (refreshTimer.current) clearTimeout(refreshTimer.current);
       refreshTimer.current = setTimeout(() => {
         router.refresh();
@@ -43,19 +42,13 @@ export function AdminRealtimeSync({ eventId }: { eventId: string }) {
   }, [eventId, router]);
 
   return (
-    <span
-      className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-        connected
-          ? 'bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30'
-          : 'bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30'
-      }`}
-    >
+    <span className="inline-flex items-center gap-2 border border-[#27272A] bg-[#111114] px-3 py-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[#A1A1AA]">
       <span
-        className={`h-2 w-2 rounded-full ${
-          connected ? 'animate-pulse bg-emerald-400' : 'bg-amber-400'
+        className={`h-2 w-2 ${
+          connected ? 'animate-pulse bg-[#22C55E]' : 'bg-[#FF2E17]'
         }`}
       />
-      {connected ? 'Live Sync Active' : 'Connecting...'}
+      {connected ? 'LIVE SYNC' : 'CONNECTING'}
     </span>
   );
 }

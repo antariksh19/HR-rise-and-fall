@@ -8,13 +8,9 @@ import {
   Copy,
   Check,
   Loader2,
-  ShieldCheck,
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -133,88 +129,103 @@ export function AdminManager({
 
   return (
     <div className="space-y-6">
-      {/* Add Admin Form */}
+      {/* Add Admin Strip */}
       <form
         onSubmit={handleAddAdmin}
-        className="grid grid-cols-1 gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-4 lg:grid-cols-4"
+        className="grid grid-cols-1 divide-y divide-[#222226] border border-[#222226] bg-[#0D0D10] lg:grid-cols-4 lg:divide-x lg:divide-y-0"
       >
-        <Input
+        <input
           type="text"
-          placeholder="Name (optional)"
+          placeholder="NAME (OPTIONAL)"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="border-slate-800 bg-slate-900 text-white"
+          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
         />
-        <Input
+        <input
           type="email"
           required
-          placeholder="Admin email (e.g., cohost@company.com)"
+          placeholder="ADMIN EMAIL"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border-slate-800 bg-slate-900 text-white"
+          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
         />
-        <Input
+        <input
           type="text"
-          placeholder="Password (blank = auto-generate)"
+          placeholder="PASSWORD (BLANK = AUTO)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border-slate-800 bg-slate-900 text-white"
+          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
         />
-        <Button
+        <button
           type="submit"
           disabled={isAdding}
-          className="bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+          className="inline-flex items-center justify-center gap-2 bg-[#F4F2EC] px-5 py-4 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50"
         >
           {isAdding ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <UserPlus className="mr-2 h-4 w-4" />
+            <UserPlus className="h-3.5 w-3.5" />
           )}
-          Add Admin
-        </Button>
+          Grant Admin Access
+        </button>
       </form>
 
       {/* Admins Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/70">
+      <div className="border border-[#222226] bg-[#0D0D10]">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800">
-              <TableHead>Name</TableHead>
-              <TableHead>Admin Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Added On</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="border-[#222226] hover:bg-transparent">
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Name
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Admin Email
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Role
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Added On
+              </TableHead>
+              <TableHead className="text-right font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {admins.map((admin) => {
               const isSelf = admin.user_id === currentAdminId;
               return (
-                <TableRow key={admin.user_id} className="border-slate-800">
-                  <TableCell className="font-semibold text-white">
+                <TableRow
+                  key={admin.user_id}
+                  className="border-[#222226] transition-colors hover:bg-[#141418]"
+                >
+                  <TableCell className="font-display text-2xl font-bold uppercase text-[#F4F2EC]">
                     {admin.display_name || 'Admin'}
                     {isSelf && (
-                      <Badge className="ml-2 bg-amber-500/15 text-amber-400">You</Badge>
+                      <span className="ml-2.5 border border-[#F4F2EC] px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-[#F4F2EC]">
+                        YOU
+                      </span>
                     )}
                   </TableCell>
-                  <TableCell className="text-slate-300">{admin.email}</TableCell>
-                  <TableCell>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
-                      <ShieldCheck className="h-3.5 w-3.5" /> Administrator
-                    </span>
+                  <TableCell className="font-mono text-xs text-[#A1A1AA]">
+                    {admin.email}
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400">
+                  <TableCell className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#22C55E]">
+                    ● ADMINISTRATOR
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-[#71717A]">
                     {new Date(admin.created_at).toLocaleDateString()}
                   </TableCell>
                   <TableCell className="text-right">
                     {!isSelf && (
-                      <Button
-                        size="sm"
-                        variant="destructive"
+                      <button
+                        type="button"
                         onClick={() => setRevokeTarget(admin)}
+                        className="inline-flex items-center gap-1.5 border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#FF2E17] transition-colors hover:bg-[#FF2E17] hover:text-white"
                       >
-                        <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Revoke
-                      </Button>
+                        <Trash2 className="h-3.5 w-3.5" /> Revoke
+                      </button>
                     )}
                   </TableCell>
                 </TableRow>
@@ -229,42 +240,42 @@ export function AdminManager({
         open={revokeTarget !== null}
         onOpenChange={(open) => !open && !revoking && setRevokeTarget(null)}
       >
-        <DialogContent className="border-slate-800 bg-slate-950 text-white sm:max-w-md">
+        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
           {revokeTarget && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl font-black text-white">
-                  Revoke Admin Access?
+                <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight">
+                  REVOKE ADMIN ACCESS?
                 </DialogTitle>
-                <DialogDescription className="pt-1 text-slate-300">
+                <DialogDescription className="pt-1 text-sm text-[#A1A1AA]">
                   Remove administrator privileges from{' '}
-                  <strong className="text-white">{revokeTarget.email}</strong>? They will immediately lose access to the Admin Control Panel.
+                  <strong className="text-[#F4F2EC]">{revokeTarget.email}</strong>?
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                <span>You can re-add them later if needed.</span>
+              <div className="flex items-start gap-3 border border-[#FF2E17]/40 bg-[#FF2E17]/10 p-3 font-mono text-xs text-[#FF2E17]">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>They will immediately lose access to the Control Room.</span>
               </div>
 
               <DialogFooter className="mt-2 gap-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   disabled={revoking}
                   onClick={() => setRevokeTarget(null)}
+                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   disabled={revoking}
                   onClick={handleRevokeAdmin}
-                  className="bg-red-600 font-bold text-white hover:bg-red-500"
+                  className="inline-flex items-center justify-center bg-[#FF2E17] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#DC2626]"
                 >
-                  {revoking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {revoking ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   Revoke Access
-                </Button>
+                </button>
               </DialogFooter>
             </>
           )}
@@ -276,70 +287,75 @@ export function AdminManager({
         open={credentialModal !== null}
         onOpenChange={(open) => !open && setCredentialModal(null)}
       >
-        <DialogContent className="border-amber-500/40 bg-slate-950 text-white sm:max-w-md">
+        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-amber-400">
-              Admin Credentials Ready
+            <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight text-[#FF2E17]">
+              ADMIN CREDENTIALS READY
             </DialogTitle>
-            <DialogDescription className="text-slate-300">
-              Share these login details privately. They can sign in via the{' '}
-              <strong>Admin Login</strong> button on the main page.
+            <DialogDescription className="text-sm text-[#A1A1AA]">
+              Share privately. They can sign in via the{' '}
+              <strong className="text-[#F4F2EC]">Admin</strong> button on the main page.
             </DialogDescription>
           </DialogHeader>
 
           {credentialModal && (
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-3">
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Admin Email</p>
-                  <p className="font-mono text-sm font-bold text-white">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
+                    Admin Email
+                  </p>
+                  <p className="mt-1 font-mono text-sm font-bold text-[#F4F2EC]">
                     {credentialModal.email}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={() => copyText('Email', credentialModal.email)}
+                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Email' ? (
-                    <Check className="h-4 w-4 text-emerald-400" />
+                    <Check className="h-4 w-4 text-[#22C55E]" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
-                </Button>
+                </button>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-3">
+              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Password</p>
-                  <p className="font-mono text-sm font-bold text-amber-400">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
+                    Password
+                  </p>
+                  <p className="mt-1 font-mono text-sm font-bold text-[#FF2E17]">
                     {credentialModal.password}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={() => copyText('Password', credentialModal.password)}
+                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Password' ? (
-                    <Check className="h-4 w-4 text-emerald-400" />
+                    <Check className="h-4 w-4 text-[#22C55E]" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
-                </Button>
+                </button>
               </div>
 
-              <Button
-                className="w-full bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+              <button
+                type="button"
                 onClick={() =>
                   copyText(
                     'Admin credentials',
                     `Admin Login: ${window.location.origin}/admin/login\nEmail: ${credentialModal.email}\nPassword: ${credentialModal.password}`
                   )
                 }
+                className="flex w-full items-center justify-center gap-2 bg-[#F4F2EC] py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
               >
-                <Copy className="mr-2 h-4 w-4" /> Copy Login Link &amp; Credentials
-              </Button>
+                <Copy className="h-3.5 w-3.5" /> Copy Login Link &amp; Credentials
+              </button>
             </div>
           )}
         </DialogContent>

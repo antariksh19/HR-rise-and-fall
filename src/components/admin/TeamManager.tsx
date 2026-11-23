@@ -15,10 +15,6 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -201,35 +197,35 @@ export function TeamManager({
     switch (target.type) {
       case 'reset_password':
         return {
-          title: 'Reset Team Password?',
-          description: `Generate a brand-new password for "${target.team.team_name}" (${target.team.team_code})? Their previous password will stop working immediately.`,
+          title: 'RESET TEAM PASSWORD?',
+          description: `Generate a brand-new password for "${target.team.team_name}" (${target.team.team_code})? Their previous password stops working immediately.`,
           warning: null,
           confirmLabel: 'Reset Password',
-          btnClass: 'bg-amber-500 font-bold text-slate-950 hover:bg-amber-400',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#FF2E17] hover:text-white',
         };
       case 'archive':
         return {
-          title: `Archive "${target.team.team_name}"?`,
-          description: `This temporarily suspends login access for ${target.team.team_code} and hides them from the live competition board. You can restore them anytime.`,
+          title: `ARCHIVE "${target.team.team_name}"?`,
+          description: `Suspends login access for ${target.team.team_code} and hides them from the live stage. You can restore them anytime.`,
           warning: 'Any vote cast by this team is invalidated while archived.',
           confirmLabel: 'Archive Team',
-          btnClass: 'bg-amber-500 font-bold text-slate-950 hover:bg-amber-400',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#FF2E17] hover:text-white',
         };
       case 'unarchive':
         return {
-          title: `Restore "${target.team.team_name}"?`,
-          description: `This will re-enable login access for ${target.team.team_code} and put them back on the live competition board.`,
+          title: `RESTORE "${target.team.team_name}"?`,
+          description: `Re-enables login access for ${target.team.team_code} and puts them back on the live competition board immediately.`,
           warning: null,
           confirmLabel: 'Unarchive Team',
-          btnClass: 'bg-emerald-500 font-bold text-slate-950 hover:bg-emerald-400',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#22C55E] hover:text-[#09090B]',
         };
       case 'delete_permanent':
         return {
-          title: `Permanently Delete "${target.team.team_name}"?`,
-          description: `This will completely erase "${target.team.team_name}" (${target.team.team_code}), delete their login account, and wipe any votes associated with them.`,
+          title: `DELETE "${target.team.team_name}"?`,
+          description: `Permanently erases "${target.team.team_name}" (${target.team.team_code}), deletes their login account, and wipes any associated votes.`,
           warning: 'This action is permanent and cannot be undone.',
           confirmLabel: 'Delete Permanently',
-          btnClass: 'bg-red-600 font-bold text-white hover:bg-red-500',
+          btnClass: 'bg-[#FF2E17] text-white hover:bg-[#DC2626]',
         };
     }
   };
@@ -238,148 +234,152 @@ export function TeamManager({
 
   return (
     <div className="space-y-6">
-      {/* Add Team Form */}
-      <form onSubmit={handleCreateTeam} className="flex flex-col gap-3 sm:flex-row">
-        <Input
-          placeholder="Enter new team name (e.g., Team Alpha)"
+      {/* Add Team Strip */}
+      <form
+        onSubmit={handleCreateTeam}
+        className="flex flex-col border border-[#222226] bg-[#0D0D10] sm:flex-row"
+      >
+        <input
+          placeholder="ENTER NEW TEAM NAME (E.G., TEAM ALPHA)"
           value={newTeamName}
           onChange={(e) => setNewTeamName(e.target.value)}
-          className="border-slate-800 bg-slate-900 text-white"
+          className="flex-1 bg-transparent px-5 py-4 font-mono text-xs uppercase tracking-[0.14em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
         />
-        <Button
+        <button
           type="submit"
           disabled={isCreating}
-          className="bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+          className="inline-flex items-center justify-center gap-2 border-t border-[#222226] bg-[#F4F2EC] px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50 sm:border-l sm:border-t-0"
         >
           {isCreating ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Plus className="mr-2 h-4 w-4" />
+            <Plus className="h-3.5 w-3.5" />
           )}
           Add Team &amp; Generate Credentials
-        </Button>
+        </button>
       </form>
 
-      {/* Teams Table */}
-      <div className="rounded-xl border border-slate-800 bg-slate-950/70">
+      {/* Hairline Teams Table */}
+      <div className="border border-[#222226] bg-[#0D0D10]">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800">
-              <TableHead>Team Name</TableHead>
-              <TableHead>Login ID</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Vote Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+            <TableRow className="border-[#222226] hover:bg-transparent">
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Team Name
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Login ID
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Status
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Ballot
+              </TableHead>
+              <TableHead className="text-right font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Actions
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {teams.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="py-8 text-center text-slate-400">
-                  No teams registered for this event yet.
+              <TableRow className="border-[#222226] hover:bg-transparent">
+                <TableCell
+                  colSpan={5}
+                  className="py-12 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]"
+                >
+                  NO TEAMS REGISTERED FOR THIS EVENT YET.
                 </TableCell>
               </TableRow>
             ) : (
               teams.map((team) => (
-                <TableRow key={team.id} className="border-slate-800">
-                  <TableCell className="font-semibold text-white">
+                <TableRow
+                  key={team.id}
+                  className="border-[#222226] transition-colors hover:bg-[#141418]"
+                >
+                  <TableCell className="font-display text-2xl font-bold uppercase tracking-tight text-[#F4F2EC]">
                     {team.team_name}
                   </TableCell>
-                  <TableCell className="font-mono text-amber-400">
+                  <TableCell className="font-mono text-xs uppercase tracking-[0.14em] text-[#A1A1AA]">
                     {team.team_code}
                   </TableCell>
                   <TableCell>
                     {team.is_active ? (
-                      <Badge className="bg-emerald-500/15 text-emerald-400">
-                        Active
-                      </Badge>
+                      <span className="inline-flex items-center gap-1.5 border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E]">
+                        ● Active
+                      </span>
                     ) : (
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-800 text-slate-400"
-                      >
+                      <span className="inline-flex items-center border border-[#27272A] bg-[#18181B] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.16em] text-[#71717A]">
                         Archived
-                      </Badge>
+                      </span>
                     )}
                   </TableCell>
                   <TableCell>
                     {team.has_voted ? (
-                      <Badge className="bg-amber-500/15 text-amber-400">
+                      <span className="inline-flex items-center border border-[#F4F2EC]/30 bg-[#F4F2EC] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#09090B]">
                         Voted
-                      </Badge>
+                      </span>
                     ) : (
-                      <span className="text-xs text-slate-500">Pending</span>
+                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#52525B]">
+                        Pending
+                      </span>
                     )}
                   </TableCell>
-                  <TableCell className="space-x-2 text-right">
+                  <TableCell className="space-x-1.5 text-right">
                     {team.is_active ? (
                       <>
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <button
+                          type="button"
                           title="Rename Team"
-                          onClick={() =>
-                            setRenameTarget({ team, name: team.team_name })
-                          }
+                          onClick={() => setRenameTarget({ team, name: team.team_name })}
+                          className="inline-flex h-8 w-8 items-center justify-center border border-[#27272A] bg-[#09090B] text-[#A1A1AA] transition-colors hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        </button>
+                        <button
+                          type="button"
                           title="Reset Password"
-                          onClick={() =>
-                            setConfirmTarget({ type: 'reset_password', team })
-                          }
+                          onClick={() => setConfirmTarget({ type: 'reset_password', team })}
+                          className="inline-flex h-8 w-8 items-center justify-center border border-[#27272A] bg-[#09090B] text-[#A1A1AA] transition-colors hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                         >
                           <KeyRound className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        </button>
+                        <button
+                          type="button"
                           title="Archive Team"
-                          className="border-amber-500/40 text-amber-400 hover:bg-amber-500/10"
-                          onClick={() =>
-                            setConfirmTarget({ type: 'archive', team })
-                          }
+                          onClick={() => setConfirmTarget({ type: 'archive', team })}
+                          className="inline-flex h-8 w-8 items-center justify-center border border-[#27272A] bg-[#09090B] text-[#A1A1AA] transition-colors hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                         >
                           <Archive className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
+                        </button>
+                        <button
+                          type="button"
                           title="Permanently Delete Team"
-                          onClick={() =>
-                            setConfirmTarget({ type: 'delete_permanent', team })
-                          }
+                          onClick={() => setConfirmTarget({ type: 'delete_permanent', team })}
+                          className="inline-flex h-8 w-8 items-center justify-center border border-[#FF2E17]/40 bg-[#FF2E17]/10 text-[#FF2E17] transition-colors hover:bg-[#FF2E17] hover:text-white"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        </button>
                       </>
                     ) : (
                       <>
-                        <Button
-                          size="sm"
-                          variant="outline"
+                        <button
+                          type="button"
                           title="Unarchive Team"
-                          className="border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10"
-                          onClick={() =>
-                            setConfirmTarget({ type: 'unarchive', team })
-                          }
+                          onClick={() => setConfirmTarget({ type: 'unarchive', team })}
+                          className="inline-flex items-center gap-1.5 border border-[#22C55E]/40 bg-[#22C55E]/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E] transition-colors hover:bg-[#22C55E] hover:text-[#09090B]"
                         >
-                          <ArchiveRestore className="mr-1.5 h-3.5 w-3.5" />
+                          <ArchiveRestore className="h-3.5 w-3.5" />
                           Unarchive
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
+                        </button>
+                        <button
+                          type="button"
                           title="Permanently Delete Team"
-                          onClick={() =>
-                            setConfirmTarget({ type: 'delete_permanent', team })
-                          }
+                          onClick={() => setConfirmTarget({ type: 'delete_permanent', team })}
+                          className="inline-flex h-8 w-8 items-center justify-center border border-[#FF2E17]/40 bg-[#FF2E17]/10 text-[#FF2E17] transition-colors hover:bg-[#FF2E17] hover:text-white"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        </button>
                       </>
                     )}
                   </TableCell>
@@ -395,50 +395,53 @@ export function TeamManager({
         open={renameTarget !== null}
         onOpenChange={(open) => !open && !actionLoading && setRenameTarget(null)}
       >
-        <DialogContent className="border-slate-800 bg-slate-950 text-white sm:max-w-md">
+        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-white">
-              Rename Team
+            <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight">
+              RENAME TEAM
             </DialogTitle>
-            <DialogDescription className="text-slate-400">
-              Changes sync immediately across all connected screens without affecting login credentials or vote history.
+            <DialogDescription className="text-sm text-[#A1A1AA]">
+              Syncs live across all stage displays without changing credentials or vote history.
             </DialogDescription>
           </DialogHeader>
 
           {renameTarget && (
-            <form onSubmit={submitRename} className="space-y-4 pt-2">
+            <form onSubmit={submitRename} className="space-y-5 pt-2">
               <div className="space-y-2">
-                <Label htmlFor="rename-team-input">New Team Name</Label>
-                <Input
+                <label
+                  htmlFor="rename-team-input"
+                  className="block font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]"
+                >
+                  New Team Name
+                </label>
+                <input
                   id="rename-team-input"
                   autoFocus
                   value={renameTarget.name}
                   onChange={(e) =>
                     setRenameTarget({ ...renameTarget, name: e.target.value })
                   }
-                  className="border-slate-800 bg-slate-900 text-white"
+                  className="w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 font-mono text-sm text-[#F4F2EC] focus:border-[#F4F2EC] focus:outline-none"
                 />
               </div>
 
               <DialogFooter className="gap-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   disabled={actionLoading}
                   onClick={() => setRenameTarget(null)}
+                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="submit"
                   disabled={actionLoading || !renameTarget.name.trim()}
-                  className="bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+                  className="inline-flex items-center justify-center bg-[#F4F2EC] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50"
                 >
-                  {actionLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {actionLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   Save Name
-                </Button>
+                </button>
               </DialogFooter>
             </form>
           )}
@@ -450,45 +453,43 @@ export function TeamManager({
         open={confirmTarget !== null}
         onOpenChange={(open) => !open && !actionLoading && setConfirmTarget(null)}
       >
-        <DialogContent className="border-slate-800 bg-slate-950 text-white sm:max-w-md">
+        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
           {dialogMeta && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-xl font-black text-white">
+                <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight">
                   {dialogMeta.title}
                 </DialogTitle>
-                <DialogDescription className="pt-1 text-slate-300">
+                <DialogDescription className="pt-1 text-sm text-[#A1A1AA]">
                   {dialogMeta.description}
                 </DialogDescription>
               </DialogHeader>
 
               {dialogMeta.warning && (
-                <div className="flex items-start gap-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
+                <div className="flex items-start gap-3 border border-[#FF2E17]/40 bg-[#FF2E17]/10 p-3 font-mono text-xs text-[#FF2E17]">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>{dialogMeta.warning}</span>
                 </div>
               )}
 
               <DialogFooter className="mt-2 gap-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   disabled={actionLoading}
                   onClick={() => setConfirmTarget(null)}
+                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
                 >
                   Cancel
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   disabled={actionLoading}
                   onClick={submitConfirmAction}
-                  className={dialogMeta.btnClass}
+                  className={`inline-flex items-center justify-center px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] transition-colors ${dialogMeta.btnClass}`}
                 >
-                  {actionLoading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
+                  {actionLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   {dialogMeta.confirmLabel}
-                </Button>
+                </button>
               </DialogFooter>
             </>
           )}
@@ -500,73 +501,75 @@ export function TeamManager({
         open={!!credentialModal}
         onOpenChange={(open) => !open && setCredentialModal(null)}
       >
-        <DialogContent className="border-amber-500/40 bg-slate-950 text-white sm:max-w-md">
+        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-amber-400">
-              Team Credentials Generated
+            <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight text-[#FF2E17]">
+              CREDENTIALS GENERATED
             </DialogTitle>
-            <DialogDescription className="text-slate-300">
-              Share these credentials privately with{' '}
-              <strong>{credentialModal?.teamName}</strong>. For security, this
-              password will not be shown again.
+            <DialogDescription className="text-sm text-[#A1A1AA]">
+              Share privately with <strong className="text-[#F4F2EC]">{credentialModal?.teamName}</strong>.
+              For security, this password is shown once.
             </DialogDescription>
           </DialogHeader>
 
           {credentialModal && (
-            <div className="space-y-4 pt-2">
-              <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-3">
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">Team Login ID</p>
-                  <p className="font-mono text-lg font-bold text-white">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
+                    Team Login ID
+                  </p>
+                  <p className="mt-1 font-mono text-lg font-bold text-[#F4F2EC]">
                     {credentialModal.loginId}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={() => copyText('Login ID', credentialModal.loginId)}
+                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Login ID' ? (
-                    <Check className="h-4 w-4 text-emerald-400" />
+                    <Check className="h-4 w-4 text-[#22C55E]" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
-                </Button>
+                </button>
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900 p-3">
+              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
                 <div>
-                  <p className="text-xs uppercase text-slate-400">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
                     Generated Password
                   </p>
-                  <p className="font-mono text-lg font-bold text-amber-400">
+                  <p className="mt-1 font-mono text-lg font-bold text-[#FF2E17]">
                     {credentialModal.password}
                   </p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
+                <button
+                  type="button"
                   onClick={() => copyText('Password', credentialModal.password)}
+                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Password' ? (
-                    <Check className="h-4 w-4 text-emerald-400" />
+                    <Check className="h-4 w-4 text-[#22C55E]" />
                   ) : (
                     <Copy className="h-4 w-4" />
                   )}
-                </Button>
+                </button>
               </div>
 
-              <Button
-                className="w-full bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+              <button
+                type="button"
                 onClick={() =>
                   copyText(
                     'Both credentials',
                     `Team: ${credentialModal.teamName}\nLogin ID: ${credentialModal.loginId}\nPassword: ${credentialModal.password}`
                   )
                 }
+                className="flex w-full items-center justify-center gap-2 bg-[#F4F2EC] py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
               >
-                <Copy className="mr-2 h-4 w-4" /> Copy Both Credentials
-              </Button>
+                <Copy className="h-3.5 w-3.5" /> Copy Both Credentials
+              </button>
             </div>
           )}
         </DialogContent>

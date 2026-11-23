@@ -2,13 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { Eye, EyeOff, Loader2, ArrowLeft, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -18,98 +15,108 @@ export default function AdminLoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleAdminLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
 
-    if (error || !data.user) {
-      toast.error('Invalid administrator credentials.');
+    if (error) {
+      toast.error('Invalid administrator email or password.');
       setLoading(false);
       return;
     }
 
-    // Confirm user exists in admin_users table
-    const { data: adminRecord } = await supabase
-      .from('admin_users')
-      .select('user_id')
-      .eq('user_id', data.user.id)
-      .single();
-
-    if (!adminRecord) {
-      await supabase.auth.signOut();
-      toast.error('This account does not have administrator privileges.');
-      setLoading(false);
-      return;
-    }
-
-    toast.success('Welcome back, Administrator.');
+    toast.success('Welcome to the Control Room.');
     router.push('/admin');
     router.refresh();
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <Card className="w-full max-w-md border-slate-800 bg-slate-950/90 shadow-2xl">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
-            <Shield className="h-6 w-6" />
+    <main className="flex min-h-screen flex-col bg-[#09090B] text-[#F4F2EC]">
+      <header className="flex items-stretch justify-between border-b border-[#222226]">
+        <Link
+          href="/"
+          className="flex items-center gap-3 border-r border-[#222226] px-6 py-4 font-mono text-xs uppercase tracking-[0.18em] text-[#8E8E93] transition-colors hover:bg-[#141417] hover:text-[#F4F2EC]"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Back to Stage
+        </Link>
+        <div className="flex items-center px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+          RESTRICTED // CONTROL ROOM
+        </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12">
+        <div className="border border-[#222226] bg-[#0D0D10] p-8 sm:p-10">
+          <div className="mb-8 border-b border-[#222226] pb-6">
+            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#FF2E17]">
+              <Shield className="h-3.5 w-3.5" />
+              <span>ADMINISTRATOR ACCESS</span>
+            </div>
+            <h1 className="mt-2 font-display text-5xl font-extrabold uppercase leading-none">
+              CONTROL ROOM
+            </h1>
           </div>
-          <CardTitle className="text-2xl font-black tracking-tight text-white">
-            HR RISE AND FALL
-          </CardTitle>
-          <CardDescription className="text-slate-400">
-            Authorized Administrator Console
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          <form onSubmit={handleAdminLogin} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Admin Email</Label>
-              <Input
+              <label
+                htmlFor="email"
+                className="block font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]"
+              >
+                Admin Email
+              </label>
+              <input
                 id="email"
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@hrrisefall.com"
-                className="border-slate-800 bg-slate-900"
+                placeholder="admin@domain.com"
+                className="w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 font-mono text-sm text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <label
+                htmlFor="password"
+                className="block font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]"
+              >
+                Password
+              </label>
               <div className="relative">
-                <Input
+                <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="border-slate-800 bg-slate-900 pr-10"
+                  placeholder="••••••••••••"
+                  className="w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 pr-12 font-mono text-sm text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8E8E93] transition-colors hover:text-[#F4F2EC]"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
             </div>
 
-            <Button
+            <button
               type="submit"
               disabled={loading}
-              className="w-full bg-amber-500 font-bold text-slate-950 hover:bg-amber-400"
+              className="flex w-full items-center justify-center gap-2 bg-[#F4F2EC] px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Sign In to Admin Panel
-            </Button>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Authenticate'}
+            </button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </main>
   );
 }

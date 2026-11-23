@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Lock, Sparkles } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { TopThreeChart } from '@/components/results/TopThreeChart';
 import type { EventRecord, RankedTeam, RevealStage } from '@/types/database';
 
@@ -40,7 +40,6 @@ export function SuspenseReveal({
       if (active) setRevealed(data.revealed ?? []);
     }
 
-    // Trigger dramatic 3-2-1 countdown when transitioning into a new podium reveal live
     const prevIdx = STAGE_ORDER.indexOf(prevStageRef.current);
     const isFreshReveal =
       stageIdx > prevIdx &&
@@ -75,159 +74,194 @@ export function SuspenseReveal({
   const second = revealed.filter((t) => t.rank === 2);
   const third = revealed.filter((t) => t.rank === 3);
 
+  const firstUnlocked = stageIdx >= 4 && countdown === null;
+  const secondUnlocked = stageIdx >= 3 && countdown === null;
+  const thirdUnlocked = stageIdx >= 2 && countdown === null;
+
   return (
-    <div className="relative mx-auto w-full max-w-6xl space-y-10 text-center">
-      {/* Dramatic 3-2-1 Countdown Overlay */}
+    <div className="relative mx-auto w-full max-w-6xl space-y-10">
+      {/* Full-Screen Broadcast Countdown */}
       <AnimatePresence>
         {countdown !== null && (
           <motion.div
             key={countdown}
-            initial={{ scale: 0.4, opacity: 0 }}
-            animate={{ scale: 1.15, opacity: 1 }}
-            exit={{ scale: 1.8, opacity: 0 }}
-            transition={{ duration: 0.5 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#060913]/90 backdrop-blur-md"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09090B]"
           >
-            <div className="text-center">
-              <p className="text-sm font-bold uppercase tracking-[0.4em] text-amber-400">
-                {event.reveal_stage === 'first_place'
-                  ? 'AND THE TEAM THAT ROSE ABOVE THE REST IS...'
-                  : `REVEALING ${event.reveal_stage.replace('_', ' ').toUpperCase()}`}
-              </p>
-              <span className="mt-4 block text-[10rem] font-black leading-none text-white drop-shadow-[0_0_40px_rgba(245,158,11,0.6)]">
-                {countdown}
-              </span>
-            </div>
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.4em] text-[#FF2E17]">
+              {event.reveal_stage === 'first_place'
+                ? 'ANNOUNCING FIRST PLACE CHAMPION'
+                : `UNLOCKING ${event.reveal_stage.replace('_', ' ').toUpperCase()}`}
+            </p>
+            <motion.span
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.35, opacity: 0 }}
+              transition={{ duration: 0.4 }}
+              className="mt-4 font-display text-[14rem] font-extrabold leading-none text-[#F4F2EC] sm:text-[18rem]"
+            >
+              0{countdown}
+            </motion.span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Stage Headline */}
-      <div className="space-y-3">
-        <p className="text-xs font-bold uppercase tracking-[0.35em] text-amber-400">
-          {event.status === 'completed'
-            ? 'Official Final Results'
-            : stageIdx <= 1
-              ? 'The Votes Are In'
-              : 'Live Podium Reveal'}
-        </p>
-        <h2 className={`${large ? 'text-6xl' : 'text-4xl sm:text-5xl'} font-black tracking-tight text-white`}>
-          {stageIdx <= 1
-            ? 'THE FATE OF EVERY TEAM HAS BEEN DECIDED.'
-            : stageIdx >= 4 && first.length > 0
-              ? `${first.map((t) => t.team_name).join(' & ')} RISES ABOVE THE REST!`
-              : 'WHO WILL RISE?'}
-        </h2>
+      {/* Editorial Header */}
+      <div className="flex flex-col justify-between gap-4 border-b border-[#222226] pb-6 md:flex-row md:items-end">
+        <div>
+          <p className="font-mono text-xs uppercase tracking-[0.25em] text-[#FF2E17]">
+            {event.status === 'completed' ? '[ OFFICIAL STANDINGS ]' : '[ LIVE STAGE REVEAL ]'}
+          </p>
+          <h2
+            className={`mt-2 font-display font-extrabold uppercase leading-[0.92] tracking-tight text-[#F4F2EC] ${
+              large ? 'text-6xl lg:text-7xl' : 'text-4xl sm:text-6xl'
+            }`}
+          >
+            {stageIdx <= 1
+              ? 'THE BALLOTS ARE SEALED.'
+              : firstUnlocked && first.length > 0
+                ? `${first.map((t) => t.team_name).join(' & ')} — CHAMPION`
+                : 'TOP THREE PODIUM'}
+          </h2>
+        </div>
+
+        <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#8E8E93]">
+          STAGE: {event.reveal_stage.replace('_', ' ').toUpperCase()}
+        </span>
       </div>
 
-      {/* Podium Cards (2nd | 1st | 3rd) */}
-      <div className="grid grid-cols-1 items-end gap-6 md:grid-cols-3">
+      {/* Stepped Architectural Podium (2nd | 1st | 3rd) */}
+      <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-3">
         {/* 2nd Place */}
         <motion.div
           layout
-          className={`rounded-2xl border p-8 transition ${
-            stageIdx >= 3 && countdown === null
-              ? 'border-slate-300/60 bg-slate-800/60 shadow-[0_0_40px_rgba(203,213,225,0.15)]'
-              : 'border-slate-800 bg-slate-900/50'
+          className={`flex flex-col justify-between border p-7 md:min-h-[260px] ${
+            secondUnlocked
+              ? 'border-[#D4D4D8] bg-[#141418]'
+              : 'border-[#222226] bg-[#0D0D10]'
           }`}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-slate-300">2nd Place</p>
-          {stageIdx >= 3 && countdown === null ? (
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
-              <p className={`${large ? 'text-4xl' : 'text-2xl'} font-black text-white`}>
+          <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.2em]">
+            <span className="text-[#D4D4D8]">02 / SECOND</span>
+            <span className="text-[#8E8E93]">SILVER</span>
+          </div>
+
+          {secondUnlocked ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="my-8"
+            >
+              <p className={`font-display font-extrabold uppercase text-[#F4F2EC] ${large ? 'text-5xl' : 'text-4xl'}`}>
                 {second.length > 0 ? second.map((t) => t.team_name).join(' & ') : '—'}
               </p>
               {second[0] && (
-                <p className="mt-2 font-mono text-sm text-slate-300">
-                  {second[0].votes} {second[0].votes === 1 ? 'vote' : 'votes'}
-                  {second[0].is_tied ? ' (Tied)' : ''}
+                <p className="mt-2 font-mono text-xs uppercase tracking-[0.18em] text-[#A1A1AA]">
+                  {second[0].votes} {second[0].votes === 1 ? 'VOTE' : 'VOTES'}
+                  {second[0].is_tied ? ' — TIED' : ''}
                 </p>
               )}
             </motion.div>
           ) : (
-            <div className="mt-5 flex flex-col items-center gap-2 text-slate-600">
-              <Lock className="h-7 w-7" />
-              <span className="text-sm font-bold tracking-widest">LOCKED</span>
+            <div className="my-10 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[#52525B]">
+              <Lock className="h-4 w-4" /> SEALED
             </div>
           )}
+
+          <div className="h-1 w-full bg-[#D4D4D8]/40" />
         </motion.div>
 
-        {/* 1st Place (Center Elevated) */}
+        {/* 1st Place (Center Elevated, Inverted Bone-White Winner Block) */}
         <motion.div
           layout
-          className={`rounded-2xl border p-10 transition ${
-            stageIdx >= 4 && countdown === null
-              ? 'border-amber-400 bg-gradient-to-b from-amber-500/20 to-slate-950 shadow-[0_0_70px_rgba(245,158,11,0.3)]'
-              : 'border-slate-800 bg-slate-900/50'
+          className={`flex flex-col justify-between border p-8 md:min-h-[330px] ${
+            firstUnlocked
+              ? 'border-[#F4F2EC] bg-[#F4F2EC] text-[#09090B]'
+              : 'border-[#222226] bg-[#0D0D10] text-[#F4F2EC]'
           }`}
         >
-          <Trophy
-            className={`mx-auto mb-3 h-12 w-12 ${
-              stageIdx >= 4 && countdown === null ? 'text-amber-400' : 'text-slate-600'
-            }`}
-          />
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-400">
-            1st Place • Champion
-          </p>
-          {stageIdx >= 4 && countdown === null ? (
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-4">
-              <p className={`${large ? 'text-5xl' : 'text-3xl'} font-black text-white`}>
+          <div className="flex items-center justify-between font-mono text-xs font-bold uppercase tracking-[0.2em]">
+            <span className={firstUnlocked ? 'text-[#FF2E17]' : 'text-[#8E8E93]'}>
+              01 / CHAMPION
+            </span>
+            <span className={firstUnlocked ? 'text-[#09090B]/60' : 'text-[#52525B]'}>
+              WINNER
+            </span>
+          </div>
+
+          {firstUnlocked ? (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="my-10"
+            >
+              <p className={`font-display font-extrabold uppercase leading-none ${large ? 'text-6xl' : 'text-5xl'}`}>
                 {first.length > 0 ? first.map((t) => t.team_name).join(' & ') : '—'}
               </p>
               {first[0] && (
-                <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-500/20 px-3 py-1 font-mono text-sm font-bold text-amber-300">
-                  <Sparkles className="h-3.5 w-3.5" /> {first[0].votes}{' '}
-                  {first[0].votes === 1 ? 'vote' : 'votes'}
-                  {first[0].is_tied ? ' (Tied)' : ''}
+                <p className="mt-4 inline-block bg-[#09090B] px-3 py-1 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#F4F2EC]">
+                  {first[0].votes} {first[0].votes === 1 ? 'VOTE' : 'VOTES'}
+                  {first[0].is_tied ? ' — TIED' : ''}
                 </p>
               )}
             </motion.div>
           ) : (
-            <div className="mt-5 flex flex-col items-center gap-2 text-slate-600">
-              <Lock className="h-7 w-7" />
-              <span className="text-sm font-bold tracking-widest">LOCKED</span>
+            <div className="my-14 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[#52525B]">
+              <Lock className="h-4 w-4" /> SEALED
             </div>
           )}
+
+          <div className={`h-1.5 w-full ${firstUnlocked ? 'bg-[#FF2E17]' : 'bg-[#222226]'}`} />
         </motion.div>
 
         {/* 3rd Place */}
         <motion.div
           layout
-          className={`rounded-2xl border p-8 transition ${
-            stageIdx >= 2 && countdown === null
-              ? 'border-amber-700/70 bg-amber-950/30 shadow-[0_0_40px_rgba(205,127,50,0.15)]'
-              : 'border-slate-800 bg-slate-900/50'
+          className={`flex flex-col justify-between border p-7 md:min-h-[215px] ${
+            thirdUnlocked
+              ? 'border-[#B45309] bg-[#141418]'
+              : 'border-[#222226] bg-[#0D0D10]'
           }`}
         >
-          <p className="text-xs font-bold uppercase tracking-widest text-amber-600">3rd Place</p>
-          {stageIdx >= 2 && countdown === null ? (
-            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
-              <p className={`${large ? 'text-4xl' : 'text-2xl'} font-black text-white`}>
+          <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.2em]">
+            <span className="text-[#D97706]">03 / THIRD</span>
+            <span className="text-[#8E8E93]">BRONZE</span>
+          </div>
+
+          {thirdUnlocked ? (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="my-6"
+            >
+              <p className={`font-display font-extrabold uppercase text-[#F4F2EC] ${large ? 'text-5xl' : 'text-4xl'}`}>
                 {third.length > 0 ? third.map((t) => t.team_name).join(' & ') : '—'}
               </p>
               {third[0] && (
-                <p className="mt-2 font-mono text-sm text-amber-500">
-                  {third[0].votes} {third[0].votes === 1 ? 'vote' : 'votes'}
-                  {third[0].is_tied ? ' (Tied)' : ''}
+                <p className="mt-2 font-mono text-xs uppercase tracking-[0.18em] text-[#A1A1AA]">
+                  {third[0].votes} {third[0].votes === 1 ? 'VOTE' : 'VOTES'}
+                  {third[0].is_tied ? ' — TIED' : ''}
                 </p>
               )}
             </motion.div>
           ) : (
-            <div className="mt-5 flex flex-col items-center gap-2 text-slate-600">
-              <Lock className="h-7 w-7" />
-              <span className="text-sm font-bold tracking-widest">LOCKED</span>
+            <div className="my-8 flex items-center gap-2 font-mono text-xs uppercase tracking-[0.25em] text-[#52525B]">
+              <Lock className="h-4 w-4" /> SEALED
             </div>
           )}
+
+          <div className="h-1 w-full bg-[#B45309]/60" />
         </motion.div>
       </div>
 
-      {/* Animated Top Three Bar Chart once 1st Place is Revealed */}
-      {stageIdx >= 4 && countdown === null && revealed.length > 0 && (
+      {/* Bar Chart once 1st Place Unlocks */}
+      {firstUnlocked && revealed.length > 0 && (
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-          className="pt-4"
+          transition={{ delay: 0.2 }}
         >
           <TopThreeChart topThree={revealed} />
         </motion.div>

@@ -1,11 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { Download, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Download } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export interface VoteRecordRow {
   id: string;
@@ -13,25 +16,14 @@ export interface VoteRecordRow {
   voter_code: string;
   target_name: string;
   target_code: string;
-  status: 'valid' | 'invalidated';
+  status: string;
   created_at: string;
 }
 
 export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
-  const [query, setQuery] = useState('');
-
-  const filtered = votes.filter((v) => {
-    const q = query.toLowerCase();
-    return (
-      v.voter_name.toLowerCase().includes(q) ||
-      v.target_name.toLowerCase().includes(q) ||
-      v.voter_code.toLowerCase().includes(q)
-    );
-  });
-
-  function exportCSV() {
-    const header = ['Voter Team', 'Voter Code', 'Voted To', 'Target Code', 'Vote Status', 'Timestamp'];
-    const rows = filtered.map((v) => [
+  function handleExportCsv() {
+    const headers = ['Voter Team', 'Voter Code', 'Voted For', 'Target Code', 'Status', 'Timestamp'];
+    const rows = votes.map((v) => [
       `"${v.voter_name.replace(/"/g, '""')}"`,
       v.voter_code,
       `"${v.target_name.replace(/"/g, '""')}"`,
@@ -39,74 +31,102 @@ export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
       v.status,
       new Date(v.created_at).toISOString(),
     ]);
-    const csv = [header.join(','), ...rows.map((r) => r.join(','))].join('\n');
+
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hr-rise-and-fall-votes-${Date.now()}.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `hr-rise-and-fall-votes-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
     URL.revokeObjectURL(url);
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col justify-between gap-3 sm:flex-row">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <Input
-            placeholder="Search voter or target team..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="border-slate-800 bg-slate-900 pl-9"
-          />
+      <div className="flex flex-wrap items-center justify-between gap-4 border border-[#222226] bg-[#0D0D10] px-5 py-4">
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+            LIVE AUDIT FEED // ADMIN ONLY
+          </p>
+          <p className="mt-0.5 text-xs text-[#A1A1AA]">
+            Individual ballots are strictly hidden from public displays and WebSockets.
+          </p>
         </div>
-        <Button variant="outline" onClick={exportCSV} disabled={filtered.length === 0}>
-          <Download className="mr-2 h-4 w-4" /> Export CSV
-        </Button>
+
+        <button
+          type="button"
+          disabled={votes.length === 0}
+          onClick={handleExportCsv}
+          className="inline-flex items-center gap-2 border border-[#27272A] bg-[#09090B] px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#F4F2EC] transition-colors hover:border-[#F4F2EC] disabled:opacity-40"
+        >
+          <Download className="h-3.5 w-3.5" /> Export CSV
+        </button>
       </div>
 
-      <div className="rounded-xl border border-slate-800 bg-slate-950/70">
+      <div className="border border-[#222226] bg-[#0D0D10]">
         <Table>
           <TableHeader>
-            <TableRow className="border-slate-800">
-              <TableHead>Voter Team</TableHead>
-              <TableHead>Voted To</TableHead>
-              <TableHead>Vote Status</TableHead>
-              <TableHead>Timestamp</TableHead>
+            <TableRow className="border-[#222226] hover:bg-transparent">
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Voter Team
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Saved Team
+              </TableHead>
+              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Status
+              </TableHead>
+              <TableHead className="text-right font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                Timestamp
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={4} className="py-8 text-center text-slate-400">
-                  No votes recorded yet.
+            {votes.length === 0 ? (
+              <TableRow className="border-[#222226] hover:bg-transparent">
+                <TableCell
+                  colSpan={4}
+                  className="py-12 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]"
+                >
+                  NO BALLOTS CAST YET.
                 </TableCell>
               </TableRow>
             ) : (
-              filtered.map((v) => (
-                <TableRow key={v.id} className="border-slate-800">
-                  <TableCell className="font-semibold text-white">
-                    {v.voter_name}{' '}
-                    <span className="font-mono text-xs text-slate-400">({v.voter_code})</span>
-                  </TableCell>
-                  <TableCell className="font-semibold text-amber-400">
-                    {v.target_name}{' '}
-                    <span className="font-mono text-xs text-slate-400">({v.target_code})</span>
+              votes.map((vote) => (
+                <TableRow
+                  key={vote.id}
+                  className="border-[#222226] transition-colors hover:bg-[#141418]"
+                >
+                  <TableCell>
+                    <p className="font-display text-xl font-bold uppercase text-[#F4F2EC]">
+                      {vote.voter_name}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                      {vote.voter_code}
+                    </p>
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      className={
-                        v.status === 'valid'
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : 'bg-red-500/15 text-red-400'
-                      }
-                    >
-                      {v.status}
-                    </Badge>
+                    <p className="font-display text-xl font-bold uppercase text-[#FF2E17]">
+                      {vote.target_name}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-[#71717A]">
+                      {vote.target_code}
+                    </p>
                   </TableCell>
-                  <TableCell className="text-sm text-slate-400">
-                    {new Date(v.created_at).toLocaleTimeString()}
+                  <TableCell>
+                    {vote.status === 'valid' ? (
+                      <span className="inline-flex items-center border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E]">
+                        Valid
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#FF2E17]">
+                        {vote.status}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right font-mono text-xs text-[#8E8E93]">
+                    {new Date(vote.created_at).toLocaleTimeString()}
                   </TableCell>
                 </TableRow>
               ))
