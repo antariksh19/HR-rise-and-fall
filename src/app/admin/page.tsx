@@ -8,6 +8,7 @@ import { VotingControls } from '@/components/admin/VotingControls';
 import { VoteMonitorTable, VoteRecordRow } from '@/components/admin/VoteMonitorTable';
 import { AdminRealtimeSync } from '@/components/admin/AdminRealtimeSync';
 import { RevealControls } from '@/components/admin/RevealControls';
+import { AdminManager, AdminRow } from '@/components/admin/AdminManager';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { EventRecord, RankedTeam } from '@/types/database';
@@ -34,19 +35,24 @@ export default async function AdminDashboardPage() {
     );
   }
 
-  const [{ data: teams }, { data: rawVotes }, { data: computedRankings }] = await Promise.all([
-    adminClient
-      .from('teams')
-      .select('id, event_id, team_name, team_code, is_active, has_voted, created_at')
-      .eq('event_id', currentEvent.id)
-      .order('created_at', { ascending: true }),
-    adminClient
-      .from('votes')
-      .select('id, voter_team_id, target_team_id, status, created_at')
-      .eq('event_id', currentEvent.id)
-      .order('created_at', { ascending: false }),
-    adminClient.rpc('compute_event_rankings', { p_event_id: currentEvent.id }),
-  ]);
+  const [{ data: teams }, { data: rawVotes }, { data: computedRankings }, { data: admins }] =
+    await Promise.all([
+      adminClient
+        .from('teams')
+        .select('id, event_id, team_name, team_code, is_active, has_voted, created_at')
+        .eq('event_id', currentEvent.id)
+        .order('created_at', { ascending: true }),
+      adminClient
+        .from('votes')
+        .select('id, voter_team_id, target_team_id, status, created_at')
+        .eq('event_id', currentEvent.id)
+        .order('created_at', { ascending: false }),
+      adminClient.rpc('compute_event_rankings', { p_event_id: currentEvent.id }),
+      adminClient
+        .from('admin_users')
+        .select('user_id, email, display_name, created_at')
+        .order('created_at', { ascending: true }),
+    ]);
 
   const teamMap = new Map((teams ?? []).map((t) => [t.id, t]));
   const voteRows: VoteRecordRow[] = (rawVotes ?? []).map((v) => ({
@@ -138,11 +144,20 @@ export default async function AdminDashboardPage() {
         </Card>
       </section>
 
-      <Tabs defaultValue="teams" className="space-y-6">
-        <TabsList className="bg-slate-900">
-          <TabsTrigger value="teams">Teams &amp; Credentials</TabsTrigger>
-          <TabsTrigger value="votes">Vote Monitor ({voteRows.length})</TabsTrigger>
-          <TabsTrigger value="reveal">Reveal &amp; Archive</TabsTrigger>
+      <Tabs defaultValue="teams" className="flex w-full flex-col gap-6">
+        <TabsList className="h-auto w-fit flex-wrap bg-slate-900 p-1">
+          <TabsTrigger value="teams" className="px-4 py-2">
+            Teams &amp; Credentials
+          </TabsTrigger>
+          <TabsTrigger value="votes" className="px-4 py-2">
+            Vote Monitor ({voteRows.length})
+          </TabsTrigger>
+          <TabsTrigger value="reveal" className="px-4 py-2">
+            Reveal &amp; Archive
+          </TabsTrigger>
+          <TabsTrigger value="admins" className="px-4 py-2">
+            Admins ({(admins ?? []).length})
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="teams">
@@ -160,6 +175,13 @@ export default async function AdminDashboardPage() {
           <RevealControls
             event={currentEvent as EventRecord}
             rankings={(computedRankings ?? []) as RankedTeam[]}
+          />
+        </TabsContent>
+
+        <TabsContent value="admins">
+          <AdminManager
+            initialAdmins={(admins ?? []) as AdminRow[]}
+            currentAdminId={auth.user.id}
           />
         </TabsContent>
       </Tabs>

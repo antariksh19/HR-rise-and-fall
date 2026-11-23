@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Flame, Users, Archive, LogIn, Sparkles } from 'lucide-react';
+import { Flame, Users, Archive, LogIn, Sparkles, Monitor, Shield } from 'lucide-react';
 import { useEventRealtime } from '@/hooks/useEventRealtime';
 import { SuspenseReveal } from '@/components/results/SuspenseReveal';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ export function PublicDashboard({
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_rgba(245,158,11,0.12),_transparent_55%)]">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-[#060913]/85 backdrop-blur-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 text-amber-400">
               <Flame className="h-5 w-5" />
@@ -53,7 +53,13 @@ export function PublicDashboard({
             </div>
           </div>
 
-          <nav className="flex items-center gap-3">
+          <nav className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Link href="/display">
+              <Button variant="outline" size="sm" className="border-slate-700 text-slate-200 hover:border-amber-500/50 hover:text-amber-300">
+                <Monitor className="mr-2 h-4 w-4" /> Display Screen
+              </Button>
+            </Link>
+
             {hasArchives && (
               <Link href="/results">
                 <Button variant="outline" size="sm" className="border-slate-700 text-slate-200">
@@ -61,6 +67,13 @@ export function PublicDashboard({
                 </Button>
               </Link>
             )}
+
+            <Link href="/admin">
+              <Button variant="outline" size="sm" className="border-slate-700 text-slate-200 hover:border-amber-500/50 hover:text-amber-300">
+                <Shield className="mr-2 h-4 w-4" /> Admin Login
+              </Button>
+            </Link>
+
             <Link href="/login">
               <Button size="sm" className="bg-amber-500 font-bold text-slate-950 hover:bg-amber-400">
                 <LogIn className="mr-2 h-4 w-4" /> Team Login
