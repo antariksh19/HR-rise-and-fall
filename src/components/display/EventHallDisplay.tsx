@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
@@ -32,6 +32,15 @@ export function EventHallDisplay({
   const { event, teams, recentTeamIds, progressPercentage, connectionStatus } =
     useEventRealtime(initialEvent, initialTeams);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [hudVisible, setHudVisible] = useState(true);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.();
+    } else {
+      document.exitFullscreen?.();
+    }
+  }, []);
 
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
@@ -39,13 +48,35 @@ export function EventHallDisplay({
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.();
-    } else {
-      document.exitFullscreen?.();
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() === 'f' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [toggleFullscreen]);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      setHudVisible(true);
+      return;
     }
-  }
+    let timer: ReturnType<typeof setTimeout>;
+    const showAndReset = () => {
+      setHudVisible(true);
+      clearTimeout(timer);
+      timer = setTimeout(() => setHudVisible(false), 2500);
+    };
+    showAndReset();
+    window.addEventListener('mousemove', showAndReset);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('mousemove', showAndReset);
+    };
+  }, [isFullscreen]);
 
   if (!event) {
     return (
@@ -65,8 +96,12 @@ export function EventHallDisplay({
 
   return (
     <main className="broadcast-grain flex min-h-screen w-full flex-col justify-between bg-[#09090B] text-[#F4F2EC]">
-      {/* Broadcast Top Strip */}
-      <header className="flex items-stretch justify-between border-b border-[#222226]">
+      {/* Auto-Hiding Broadcast Top Strip */}
+      <header
+        className={`flex items-stretch justify-between border-b border-[#222226] transition-opacity duration-300 ${
+          isFullscreen && !hudVisible ? 'pointer-events-none opacity-0' : 'opacity-100'
+        }`}
+      >
         <div className="flex items-center gap-5 px-8 py-5">
           <span className="relative flex h-3 w-3">
             {isLive && (
@@ -103,6 +138,7 @@ export function EventHallDisplay({
           <button
             type="button"
             onClick={toggleFullscreen}
+            title="Press F to toggle fullscreen"
             className="flex items-center gap-2 border-l border-[#222226] bg-[#F4F2EC] px-6 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
           >
             {isFullscreen ? (
@@ -268,7 +304,11 @@ export function EventHallDisplay({
       {/* Broadcast Footer */}
       <footer className="flex items-center justify-between border-t border-[#222226] px-8 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-[#52525B]">
         <span>HR RISE AND FALL // OFFICIAL STAGE FEED</span>
-        <span>{connectionStatus === 'connected' ? '● ZERO-LEAKAGE REALTIME' : '○ RECONNECTING'}</span>
+        <span>
+          {connectionStatus === 'connected'
+            ? '● ZERO-LEAKAGE REALTIME // PRESS F FOR FULLSCREEN'
+            : '○ RECONNECTING'}
+        </span>
       </footer>
     </main>
   );

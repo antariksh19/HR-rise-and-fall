@@ -57,7 +57,7 @@ export function AnimatedNumber({
   return <>{padZero ? String(rounded).padStart(2, '0') : rounded}</>;
 }
 
-/** 32-segment precision broadcast meter */
+/** Precision segmented broadcast meter */
 export function SegmentedProgressBar({
   percentage,
   segments = 32,
@@ -72,7 +72,8 @@ export function SegmentedProgressBar({
 
   return (
     <div
-      className={`grid w-full gap-1 ${tall ? 'h-8' : 'h-3.5'}`} style={{ gridTemplateColumns: `repeat(${segments}, minmax(0, 1fr))` }}
+      className={`grid w-full gap-1 ${tall ? 'h-8' : 'h-3.5'}`}
+      style={{ gridTemplateColumns: `repeat(${segments}, minmax(0, 1fr))` }}
       role="progressbar"
       aria-valuenow={clamped}
       aria-valuemin={0}
@@ -108,5 +109,53 @@ export function CornerMarks({ light = false }: { light?: boolean }) {
       <span className={`pointer-events-none absolute bottom-0 left-0 h-2.5 w-2.5 border-b border-l ${color}`} />
       <span className={`pointer-events-none absolute bottom-0 right-0 h-2.5 w-2.5 border-b border-r ${color}`} />
     </>
+  );
+}
+
+const PHASES = [
+  { key: 'not_started', num: '01', label: 'Standby' },
+  { key: 'voting_live', num: '02', label: 'Live Voting' },
+  { key: 'voting_completed', num: '03', label: 'Ballots Sealed' },
+  { key: 'revealing', num: '04', label: 'Stage Reveal' },
+  { key: 'completed', num: '05', label: 'Official' },
+] as const;
+
+/** 5-stage live competition phase indicator */
+export function BroadcastPhaseBar({
+  status,
+}: {
+  status: 'not_started' | 'voting_live' | 'voting_completed' | 'revealing' | 'completed';
+}) {
+  const activeIdx = PHASES.findIndex((p) => p.key === status);
+
+  return (
+    <div className="grid grid-cols-5 divide-x divide-[#222226] border-b border-[#222226] bg-[#0B0B0E]">
+      {PHASES.map((phase, idx) => {
+        const isCurrent = idx === activeIdx;
+        const isPast = idx < activeIdx;
+        return (
+          <div
+            key={phase.key}
+            className={`relative px-3 py-3 transition-colors sm:px-5 ${
+              isCurrent
+                ? 'bg-[#141418] text-[#F4F2EC]'
+                : isPast
+                  ? 'text-[#A1A1AA]'
+                  : 'text-[#52525B]'
+            }`}
+          >
+            {isCurrent && (
+              <span className="absolute inset-x-0 top-0 h-0.5 bg-[#FF2E17]" />
+            )}
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span className={isCurrent ? 'font-bold text-[#FF2E17]' : 'opacity-60'}>
+                {phase.num}
+              </span>
+              <span className="hidden truncate sm:inline">{phase.label}</span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }

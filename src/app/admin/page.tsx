@@ -9,6 +9,7 @@ import { VoteMonitorTable, VoteRecordRow } from '@/components/admin/VoteMonitorT
 import { AdminRealtimeSync } from '@/components/admin/AdminRealtimeSync';
 import { RevealControls } from '@/components/admin/RevealControls';
 import { AdminManager, AdminRow } from '@/components/admin/AdminManager';
+import { AdminSignOutButton } from '@/components/admin/AdminSignOutButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LiveTimecode,
@@ -127,6 +128,7 @@ export default async function AdminDashboardPage() {
           <div className="flex flex-wrap items-center gap-3">
             <AdminRealtimeSync eventId={currentEvent.id} />
             <VotingControls event={currentEvent as EventRecord} />
+            <AdminSignOutButton />
           </div>
         </div>
       </header>

@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, AlertTriangle, Loader2, LogOut, ArrowUpRight } from 'lucide-react';
+import {
+  Lock,
+  Check,
+  AlertTriangle,
+  Loader2,
+  LogOut,
+  ArrowUpRight,
+  Search,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { useEventRealtime } from '@/hooks/useEventRealtime';
@@ -24,12 +32,19 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
   const { event, teams, progressPercentage } = useEventRealtime(initialEvent, initialTeams);
+  const [query, setQuery] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<TeamRecord | null>(null);
   const [hasVoted, setHasVoted] = useState(currentTeam.has_voted);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isVotingLive = event?.status === 'voting_live';
+
+  const filteredTeams = teams.filter(
+    (t) =>
+      t.team_name.toLowerCase().includes(query.trim().toLowerCase()) ||
+      t.team_code.toLowerCase().includes(query.trim().toLowerCase())
+  );
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -174,63 +189,90 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
               </div>
             )}
 
-            {/* Hairline Team Selection Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              <AnimatePresence mode="popLayout">
-                {teams.map((team, idx) => {
-                  const isSelf = team.id === currentTeam.id;
-                  const isSelected = selectedTeam?.id === team.id;
-                  const serial = String(idx + 1).padStart(2, '0');
-
-                  return (
-                    <motion.button
-                      key={team.id}
-                      layout
-                      type="button"
-                      disabled={isSelf || !isVotingLive}
-                      onClick={() => setSelectedTeam(team)}
-                      className={`group flex flex-col justify-between border-b border-r border-[#222226] p-8 text-left transition-colors duration-150 ${
-                        isSelf
-                          ? 'cursor-not-allowed bg-[#0B0B0D] opacity-40'
-                          : isSelected
-                            ? 'bg-[#FF2E17] text-white'
-                            : isVotingLive
-                              ? 'cursor-pointer bg-[#09090B] hover:bg-[#F4F2EC] hover:text-[#09090B]'
-                              : 'cursor-not-allowed bg-[#09090B] opacity-50'
-                      }`}
-                    >
-                      <div className="flex w-full items-center justify-between font-mono text-[11px] uppercase tracking-[0.18em]">
-                        <span className="opacity-60">NO. {serial}</span>
-                        {isSelf ? (
-                          <span className="inline-flex items-center gap-1.5 opacity-80">
-                            <Lock className="h-3 w-3" /> YOUR TEAM
-                          </span>
-                        ) : (
-                          <span className="opacity-60">{team.team_code}</span>
-                        )}
-                      </div>
-
-                      <p className="mt-10 font-display text-4xl font-extrabold uppercase tracking-tight transition-transform duration-200 group-hover:translate-x-1 sm:text-5xl">
-                        {team.team_name}
-                      </p>
-
-                      <div className="mt-8 flex w-full items-center justify-between border-t border-current/15 pt-4 font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">
-                        <span>
-                          {isSelf
-                            ? 'SELF-VOTING PROHIBITED'
-                            : isVotingLive
-                              ? 'SELECT TO SAVE'
-                              : 'LOCKED'}
-                        </span>
-                        {!isSelf && isVotingLive && (
-                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-                        )}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </AnimatePresence>
+            {/* Mobile-First Instant Search Bar */}
+            <div className="flex items-center gap-3 border-b border-[#222226] bg-[#0D0D10] px-6 py-3.5 sm:px-10">
+              <Search className="h-4 w-4 shrink-0 text-[#71717A]" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="FILTER TEAMS BY NAME OR CODE..."
+                className="w-full bg-transparent font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] hover:text-[#F4F2EC]"
+                >
+                  Clear
+                </button>
+              )}
             </div>
+
+            {/* Hairline Team Selection Grid */}
+            {filteredTeams.length === 0 ? (
+              <div className="px-6 py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]">
+                NO TEAMS MATCH &ldquo;{query}&rdquo;.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                <AnimatePresence mode="popLayout">
+                  {filteredTeams.map((team, idx) => {
+                    const isSelf = team.id === currentTeam.id;
+                    const isSelected = selectedTeam?.id === team.id;
+                    const serial = String(idx + 1).padStart(2, '0');
+
+                    return (
+                      <motion.button
+                        key={team.id}
+                        layout
+                        type="button"
+                        disabled={isSelf || !isVotingLive}
+                        onClick={() => setSelectedTeam(team)}
+                        className={`group flex flex-col justify-between border-b border-r border-[#222226] p-8 text-left transition-colors duration-150 ${
+                          isSelf
+                            ? 'cursor-not-allowed bg-[#0B0B0D] opacity-40'
+                            : isSelected
+                              ? 'bg-[#FF2E17] text-white'
+                              : isVotingLive
+                                ? 'cursor-pointer bg-[#09090B] hover:bg-[#F4F2EC] hover:text-[#09090B]'
+                                : 'cursor-not-allowed bg-[#09090B] opacity-50'
+                        }`}
+                      >
+                        <div className="flex w-full items-center justify-between font-mono text-[11px] uppercase tracking-[0.18em]">
+                          <span className="opacity-60">NO. {serial}</span>
+                          {isSelf ? (
+                            <span className="inline-flex items-center gap-1.5 opacity-80">
+                              <Lock className="h-3 w-3" /> YOUR TEAM
+                            </span>
+                          ) : (
+                            <span className="opacity-60">{team.team_code}</span>
+                          )}
+                        </div>
+
+                        <p className="mt-10 font-display text-4xl font-extrabold uppercase tracking-tight transition-transform duration-200 group-hover:translate-x-1 sm:text-5xl">
+                          {team.team_name}
+                        </p>
+
+                        <div className="mt-8 flex w-full items-center justify-between border-t border-current/15 pt-4 font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">
+                          <span>
+                            {isSelf
+                              ? 'SELF-VOTING PROHIBITED'
+                              : isVotingLive
+                                ? 'SELECT TO SAVE'
+                                : 'LOCKED'}
+                          </span>
+                          {!isSelf && isVotingLive && (
+                            <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                          )}
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+            )}
           </>
         )}
       </main>

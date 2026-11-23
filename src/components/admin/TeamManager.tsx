@@ -13,6 +13,7 @@ import {
   Check,
   Loader2,
   AlertTriangle,
+  Search,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -62,6 +63,9 @@ export function TeamManager({
   const [newTeamName, setNewTeamName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'archived'>('all');
+
   const [credentialModal, setCredentialModal] = useState<CredentialModalData | null>(null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ team: AdminTeamRow; name: string } | null>(null);
@@ -74,6 +78,17 @@ export function TeamManager({
   useEffect(() => {
     setTeams(initialTeams);
   }, [initialTeams]);
+
+  const filteredTeams = teams.filter((t) => {
+    const matchesQuery =
+      t.team_name.toLowerCase().includes(searchQuery.trim().toLowerCase()) ||
+      t.team_code.toLowerCase().includes(searchQuery.trim().toLowerCase());
+    if (!matchesQuery) return false;
+    if (statusFilter === 'active') return t.is_active;
+    if (statusFilter === 'pending') return t.is_active && !t.has_voted;
+    if (statusFilter === 'archived') return !t.is_active;
+    return true;
+  });
 
   async function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault();
@@ -233,7 +248,7 @@ export function TeamManager({
   const dialogMeta = confirmTarget ? getDialogMeta(confirmTarget) : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Add Team Strip */}
       <form
         onSubmit={handleCreateTeam}
@@ -259,6 +274,45 @@ export function TeamManager({
         </button>
       </form>
 
+      {/* Search & Filter Bar */}
+      <div className="flex flex-col justify-between gap-3 border border-[#222226] bg-[#0D0D10] p-3 sm:flex-row sm:items-center">
+        <div className="flex flex-1 items-center gap-2.5 px-2">
+          <Search className="h-3.5 w-3.5 shrink-0 text-[#71717A]" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="SEARCH TEAMS OR LOGIN ID..."
+            className="w-full bg-transparent py-1 font-mono text-xs uppercase tracking-[0.14em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] hover:text-[#F4F2EC]"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {(['all', 'active', 'pending', 'archived'] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setStatusFilter(tab)}
+              className={`px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+                statusFilter === tab
+                  ? 'bg-[#F4F2EC] text-[#09090B]'
+                  : 'border border-[#27272A] text-[#8E8E93] hover:text-[#F4F2EC]'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Hairline Teams Table */}
       <div className="border border-[#222226] bg-[#0D0D10]">
         <Table>
@@ -282,17 +336,19 @@ export function TeamManager({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {teams.length === 0 ? (
+            {filteredTeams.length === 0 ? (
               <TableRow className="border-[#222226] hover:bg-transparent">
                 <TableCell
                   colSpan={5}
                   className="py-12 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]"
                 >
-                  NO TEAMS REGISTERED FOR THIS EVENT YET.
+                  {teams.length === 0
+                    ? 'NO TEAMS REGISTERED FOR THIS EVENT YET.'
+                    : 'NO TEAMS MATCH YOUR CURRENT FILTER.'}
                 </TableCell>
               </TableRow>
             ) : (
-              teams.map((team) => (
+              filteredTeams.map((team) => (
                 <TableRow
                   key={team.id}
                   className="border-[#222226] transition-colors hover:bg-[#141418]"

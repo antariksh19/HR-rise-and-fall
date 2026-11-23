@@ -10,6 +10,7 @@ import {
   AnimatedNumber,
   SegmentedProgressBar,
   CornerMarks,
+  BroadcastPhaseBar,
 } from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, TeamRecord } from '@/types/database';
 
@@ -45,7 +46,6 @@ export function PublicDashboard({
       {/* Architectural Top Bar */}
       <header className="sticky top-0 z-30 border-b border-[#222226] bg-[#09090B]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1440px] items-stretch justify-between">
-          {/* Brand Block */}
           <div className="flex items-stretch">
             <Link
               href="/"
@@ -73,7 +73,6 @@ export function PublicDashboard({
             </div>
           </div>
 
-          {/* Navigation Links */}
           <nav className="flex items-stretch">
             <Link
               href="/display"
@@ -131,6 +130,11 @@ export function PublicDashboard({
             </span>
           ))}
         </div>
+      </div>
+
+      {/* 5-Stage Live Competition Timeline */}
+      <div className="mx-auto max-w-[1440px]">
+        <BroadcastPhaseBar status={event?.status ?? 'not_started'} />
       </div>
 
       {/* Main Editorial Container */}
