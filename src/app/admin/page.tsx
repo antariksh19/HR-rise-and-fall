@@ -10,6 +10,12 @@ import { AdminRealtimeSync } from '@/components/admin/AdminRealtimeSync';
 import { RevealControls } from '@/components/admin/RevealControls';
 import { AdminManager, AdminRow } from '@/components/admin/AdminManager';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  LiveTimecode,
+  AnimatedNumber,
+  SegmentedProgressBar,
+  CornerMarks,
+} from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, RankedTeam } from '@/types/database';
 
 export default async function AdminDashboardPage() {
@@ -25,7 +31,7 @@ export default async function AdminDashboardPage() {
 
   if (!currentEvent) {
     return (
-      <main className="mx-auto max-w-4xl p-12 text-center font-mono text-xs uppercase tracking-widest text-[#8E8E93]">
+      <main className="broadcast-grain mx-auto max-w-4xl p-12 text-center font-mono text-xs uppercase tracking-widest text-[#8E8E93]">
         NO ACTIVE EVENT FOUND. SEED AN EVENT WITH IS_CURRENT = TRUE IN SUPABASE.
       </main>
     );
@@ -63,30 +69,50 @@ export default async function AdminDashboardPage() {
 
   const completionPct =
     currentEvent.active_team_count > 0
-      ? ((currentEvent.valid_vote_count / currentEvent.active_team_count) * 100).toFixed(1)
-      : '0.0';
+      ? Math.min(
+          100,
+          Number(((currentEvent.valid_vote_count / currentEvent.active_team_count) * 100).toFixed(1))
+        )
+      : 0;
+
+  const isLive = currentEvent.status === 'voting_live' || currentEvent.status === 'revealing';
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
       {/* Control Room Header */}
       <header className="border-b border-[#222226] bg-[#09090B]">
         <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-6 py-6 lg:flex-row lg:items-center lg:px-10">
           <div>
-            <div className="flex flex-wrap items-center gap-4 font-mono text-[11px] uppercase tracking-[0.2em]">
-              <span className="text-[#FF2E17]">● CONTROL ROOM</span>
-              <span className="text-[#52525B]">/</span>
+            <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em]">
+              <span className="inline-flex items-center gap-2 text-[#FF2E17]">
+                <span className="relative flex h-2 w-2">
+                  {isLive && (
+                    <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
+                  )}
+                  <span className="relative inline-flex h-2 w-2 bg-[#FF2E17]" />
+                </span>
+                CONTROL ROOM
+              </span>
+              <span className="text-[#27272A]">/</span>
               <span className="text-[#8E8E93]">{auth.admin.email}</span>
+              <span className="text-[#27272A]">/</span>
+              <span className="text-[#71717A]">
+                <LiveTimecode />
+              </span>
             </div>
-            <h1 className="mt-1 font-display text-4xl font-extrabold uppercase tracking-tight sm:text-5xl">
+
+            <h1 className="mt-1.5 font-display text-4xl font-extrabold uppercase tracking-tight sm:text-5xl">
               {currentEvent.name}
             </h1>
+
             <div className="mt-3 flex flex-wrap items-center gap-5 font-mono text-[11px] uppercase tracking-[0.16em]">
               <Link
                 href="/"
                 target="_blank"
-                className="inline-flex items-center gap-1 text-[#A1A1AA] transition-colors hover:text-[#F4F2EC]"
+                className="group inline-flex items-center gap-1 text-[#A1A1AA] transition-colors hover:text-[#F4F2EC]"
               >
-                Public Stage <ArrowUpRight className="h-3.5 w-3.5" />
+                Public Stage
+                <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
               <Link
                 href="/display"
@@ -105,15 +131,16 @@ export default async function AdminDashboardPage() {
         </div>
       </header>
 
-      {/* Hairline Telemetry Strip */}
-      <section className="border-b border-[#222226] bg-[#0D0D10]">
-        <div className="mx-auto grid max-w-[1440px] grid-cols-2 divide-x divide-y divide-[#222226] lg:grid-cols-4 lg:divide-y-0">
+      {/* Dot-Matrix Telemetry Strip */}
+      <section className="bg-telemetry-dots relative border-b border-[#222226] bg-[#0D0D10]">
+        <div className="relative mx-auto grid max-w-[1440px] grid-cols-2 divide-x divide-y divide-[#222226] lg:grid-cols-4 lg:divide-y-0">
+          <CornerMarks />
           <div className="p-6 lg:px-10">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
               ACTIVE TEAMS
             </p>
             <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
-              {String(currentEvent.active_team_count).padStart(2, '0')}
+              <AnimatedNumber value={currentEvent.active_team_count} padZero />
             </p>
           </div>
           <div className="p-6 lg:px-10">
@@ -121,16 +148,21 @@ export default async function AdminDashboardPage() {
               BALLOTS CAST
             </p>
             <p className="mt-2 font-display text-5xl font-extrabold tabular-nums text-[#FF2E17]">
-              {String(currentEvent.valid_vote_count).padStart(2, '0')}
+              <AnimatedNumber value={currentEvent.valid_vote_count} padZero />
             </p>
           </div>
           <div className="p-6 lg:px-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-              COMPLETION
-            </p>
-            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
-              {completionPct}%
-            </p>
+            <div className="flex items-baseline justify-between">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+                COMPLETION
+              </p>
+              <span className="font-mono text-xs font-bold tabular-nums text-[#F4F2EC]">
+                <AnimatedNumber value={completionPct} decimals={1} />%
+              </span>
+            </div>
+            <div className="mt-5">
+              <SegmentedProgressBar percentage={completionPct} segments={18} />
+            </div>
           </div>
           <div className="p-6 lg:px-10">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">

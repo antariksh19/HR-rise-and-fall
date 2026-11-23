@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
 import { Eye, EyeOff, Loader2, ArrowLeft, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { LiveTimecode, CornerMarks } from '@/components/ui/BroadcastPrimitives';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -36,28 +38,38 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-[#09090B] text-[#F4F2EC]">
-      <header className="flex items-stretch justify-between border-b border-[#222226]">
+    <main className="broadcast-grain bg-telemetry-dots flex min-h-screen flex-col bg-[#09090B] text-[#F4F2EC]">
+      <header className="flex items-stretch justify-between border-b border-[#222226] bg-[#09090B]">
         <Link
           href="/"
           className="flex items-center gap-3 border-r border-[#222226] px-6 py-4 font-mono text-xs uppercase tracking-[0.18em] text-[#8E8E93] transition-colors hover:bg-[#141417] hover:text-[#F4F2EC]"
         >
           <ArrowLeft className="h-3.5 w-3.5" /> Back to Stage
         </Link>
-        <div className="flex items-center px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
-          RESTRICTED // CONTROL ROOM
+        <div className="flex items-center gap-4 px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+          <span className="hidden sm:inline">RESTRICTED // CONTROL ROOM</span>
+          <span className="text-[#27272A]">/</span>
+          <LiveTimecode />
         </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-center px-6 py-12">
-        <div className="border border-[#222226] bg-[#0D0D10] p-8 sm:p-10">
+        <div className="relative border border-[#222226] bg-[#0D0D10] p-8 sm:p-10">
+          <CornerMarks />
           <div className="mb-8 border-b border-[#222226] pb-6">
             <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.22em] text-[#FF2E17]">
               <Shield className="h-3.5 w-3.5" />
               <span>ADMINISTRATOR ACCESS</span>
             </div>
-            <h1 className="mt-2 font-display text-5xl font-extrabold uppercase leading-none">
-              CONTROL ROOM
+            <h1 className="mt-2 overflow-hidden font-display text-5xl font-extrabold uppercase leading-none">
+              <motion.span
+                className="block"
+                initial={{ y: '105%' }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                CONTROL ROOM
+              </motion.span>
             </h1>
           </div>
 

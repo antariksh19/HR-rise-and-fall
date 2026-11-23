@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { TopThreeChart } from '@/components/results/TopThreeChart';
+import { CornerMarks } from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, RankedTeam, RevealStage } from '@/types/database';
 
 const STAGE_ORDER: RevealStage[] = [
@@ -49,12 +50,12 @@ export function SuspenseReveal({
 
     if (isFreshReveal) {
       setCountdown(3);
-      const t1 = setTimeout(() => setCountdown(2), 700);
-      const t2 = setTimeout(() => setCountdown(1), 1400);
+      const t1 = setTimeout(() => setCountdown(2), 750);
+      const t2 = setTimeout(() => setCountdown(1), 1500);
       const t3 = setTimeout(() => {
         setCountdown(null);
         loadRevealed();
-      }, 2100);
+      }, 2250);
       return () => {
         active = false;
         clearTimeout(t1);
@@ -88,19 +89,26 @@ export function SuspenseReveal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09090B]"
+            className="bg-telemetry-dots fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#09090B]"
           >
-            <p className="font-mono text-xs font-bold uppercase tracking-[0.4em] text-[#FF2E17]">
+            <motion.div
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.65, ease: 'easeOut' }}
+              className="absolute top-1/2 h-px w-full origin-left bg-[#FF2E17]/30"
+            />
+
+            <p className="relative font-mono text-xs font-bold uppercase tracking-[0.45em] text-[#FF2E17]">
               {event.reveal_stage === 'first_place'
                 ? 'ANNOUNCING FIRST PLACE CHAMPION'
                 : `UNLOCKING ${event.reveal_stage.replace('_', ' ').toUpperCase()}`}
             </p>
             <motion.span
-              initial={{ scale: 0.7, opacity: 0 }}
+              initial={{ scale: 0.72, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.35, opacity: 0 }}
+              exit={{ scale: 1.3, opacity: 0 }}
               transition={{ duration: 0.4 }}
-              className="mt-4 font-display text-[14rem] font-extrabold leading-none text-[#F4F2EC] sm:text-[18rem]"
+              className="relative mt-4 font-display text-[14rem] font-extrabold leading-none text-[#F4F2EC] sm:text-[18rem]"
             >
               0{countdown}
             </motion.span>
@@ -137,12 +145,13 @@ export function SuspenseReveal({
         {/* 2nd Place */}
         <motion.div
           layout
-          className={`flex flex-col justify-between border p-7 md:min-h-[260px] ${
+          className={`relative flex flex-col justify-between border p-7 md:min-h-[260px] ${
             secondUnlocked
               ? 'border-[#D4D4D8] bg-[#141418]'
               : 'border-[#222226] bg-[#0D0D10]'
           }`}
         >
+          <CornerMarks />
           <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.2em]">
             <span className="text-[#D4D4D8]">02 / SECOND</span>
             <span className="text-[#8E8E93]">SILVER</span>
@@ -150,8 +159,9 @@ export function SuspenseReveal({
 
           {secondUnlocked ? (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 }}
+              animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               className="my-8"
             >
               <p className={`font-display font-extrabold uppercase text-[#F4F2EC] ${large ? 'text-5xl' : 'text-4xl'}`}>
@@ -176,12 +186,13 @@ export function SuspenseReveal({
         {/* 1st Place (Center Elevated, Inverted Bone-White Winner Block) */}
         <motion.div
           layout
-          className={`flex flex-col justify-between border p-8 md:min-h-[330px] ${
+          className={`relative flex flex-col justify-between border p-8 md:min-h-[340px] ${
             firstUnlocked
               ? 'border-[#F4F2EC] bg-[#F4F2EC] text-[#09090B]'
               : 'border-[#222226] bg-[#0D0D10] text-[#F4F2EC]'
           }`}
         >
+          <CornerMarks light={firstUnlocked} />
           <div className="flex items-center justify-between font-mono text-xs font-bold uppercase tracking-[0.2em]">
             <span className={firstUnlocked ? 'text-[#FF2E17]' : 'text-[#8E8E93]'}>
               01 / CHAMPION
@@ -193,8 +204,9 @@ export function SuspenseReveal({
 
           {firstUnlocked ? (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 }}
+              animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
               className="my-10"
             >
               <p className={`font-display font-extrabold uppercase leading-none ${large ? 'text-6xl' : 'text-5xl'}`}>
@@ -219,12 +231,13 @@ export function SuspenseReveal({
         {/* 3rd Place */}
         <motion.div
           layout
-          className={`flex flex-col justify-between border p-7 md:min-h-[215px] ${
+          className={`relative flex flex-col justify-between border p-7 md:min-h-[215px] ${
             thirdUnlocked
               ? 'border-[#B45309] bg-[#141418]'
               : 'border-[#222226] bg-[#0D0D10]'
           }`}
         >
+          <CornerMarks />
           <div className="flex items-center justify-between font-mono text-xs uppercase tracking-[0.2em]">
             <span className="text-[#D97706]">03 / THIRD</span>
             <span className="text-[#8E8E93]">BRONZE</span>
@@ -232,8 +245,9 @@ export function SuspenseReveal({
 
           {thirdUnlocked ? (
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ clipPath: 'inset(100% 0% 0% 0%)', opacity: 0 }}
+              animate={{ clipPath: 'inset(0% 0% 0% 0%)', opacity: 1 }}
+              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
               className="my-6"
             >
               <p className={`font-display font-extrabold uppercase text-[#F4F2EC] ${large ? 'text-5xl' : 'text-4xl'}`}>

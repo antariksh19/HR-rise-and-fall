@@ -1,6 +1,11 @@
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight } from 'lucide-react';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  LiveTimecode,
+  CornerMarks,
+  SegmentedProgressBar,
+} from '@/components/ui/BroadcastPrimitives';
 import type { ResultsSnapshot } from '@/types/database';
 
 export default async function ResultsArchivePage() {
@@ -13,7 +18,7 @@ export default async function ResultsArchivePage() {
   const snapshots = (data ?? []) as ResultsSnapshot[];
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
       <header className="border-b border-[#222226]">
         <div className="mx-auto flex max-w-[1440px] items-stretch justify-between">
           <Link
@@ -22,8 +27,10 @@ export default async function ResultsArchivePage() {
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Stage
           </Link>
-          <div className="flex items-center px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
-            HR RISE &amp; FALL // ARCHIVE
+          <div className="flex items-center gap-4 px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+            <span className="hidden sm:inline">HR RISE &amp; FALL // ARCHIVE</span>
+            <span className="text-[#27272A]">/</span>
+            <LiveTimecode />
           </div>
         </div>
       </header>
@@ -39,7 +46,7 @@ export default async function ResultsArchivePage() {
         </div>
 
         {snapshots.length === 0 ? (
-          <div className="mt-10 border border-[#222226] bg-[#0D0D10] py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]">
+          <div className="bg-telemetry-dots mt-10 border border-[#222226] bg-[#0D0D10] py-20 text-center font-mono text-xs uppercase tracking-[0.2em] text-[#52525B]">
             NO ARCHIVED RESULTS YET. FINAL RESULTS APPEAR HERE AFTER COMPLETION.
           </div>
         ) : (
@@ -52,8 +59,9 @@ export default async function ResultsArchivePage() {
               return (
                 <div
                   key={snap.id}
-                  className="flex flex-col justify-between border border-[#222226] bg-[#0D0D10] p-7"
+                  className="bg-telemetry-dots relative flex flex-col justify-between border border-[#222226] bg-[#0D0D10] p-7"
                 >
+                  <CornerMarks />
                   <div>
                     <div className="flex items-start justify-between gap-4 border-b border-[#222226] pb-5">
                       <div>
@@ -67,6 +75,13 @@ export default async function ResultsArchivePage() {
                       <span className="border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E]">
                         {snap.voting_completion_percentage}% VOTED
                       </span>
+                    </div>
+
+                    <div className="mt-4">
+                      <SegmentedProgressBar
+                        percentage={Number(snap.voting_completion_percentage)}
+                        segments={24}
+                      />
                     </div>
 
                     <div className="mt-5 divide-y divide-[#222226] border border-[#222226] bg-[#09090B] font-mono text-xs">
@@ -97,9 +112,10 @@ export default async function ResultsArchivePage() {
                     </span>
                     <Link
                       href={`/results/${snap.event_id}`}
-                      className="inline-flex items-center gap-1.5 bg-[#F4F2EC] px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
+                      className="group inline-flex items-center gap-1.5 bg-[#F4F2EC] px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
                     >
-                      Full Record <ArrowUpRight className="h-3.5 w-3.5" />
+                      Full Record
+                      <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </Link>
                   </div>
                 </div>

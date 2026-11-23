@@ -3,10 +3,15 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, Check, AlertTriangle, Loader2, LogOut } from 'lucide-react';
+import { Lock, Check, AlertTriangle, Loader2, LogOut, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { createBrowserSupabaseClient } from '@/lib/supabase/client';
 import { useEventRealtime } from '@/hooks/useEventRealtime';
+import {
+  LiveTimecode,
+  SegmentedProgressBar,
+  CornerMarks,
+} from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, TeamRecord } from '@/types/database';
 
 interface Props {
@@ -18,7 +23,7 @@ interface Props {
 export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }: Props) {
   const router = useRouter();
   const supabase = createBrowserSupabaseClient();
-  const { event, teams } = useEventRealtime(initialEvent, initialTeams);
+  const { event, teams, progressPercentage } = useEventRealtime(initialEvent, initialTeams);
   const [selectedTeam, setSelectedTeam] = useState<TeamRecord | null>(null);
   const [hasVoted, setHasVoted] = useState(currentTeam.has_voted);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,16 +64,21 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
   }
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
       {/* Header Bar */}
       <header className="border-b border-[#222226] bg-[#09090B]">
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-stretch justify-between">
           <div className="flex items-center gap-4 px-6 py-5 sm:px-10">
-            <span
-              className={`h-2.5 w-2.5 ${
-                isVotingLive ? 'animate-pulse bg-[#FF2E17]' : 'bg-[#52525B]'
-              }`}
-            />
+            <span className="relative flex h-2.5 w-2.5 shrink-0">
+              {isVotingLive && (
+                <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex h-2.5 w-2.5 ${
+                  isVotingLive ? 'bg-[#FF2E17]' : 'bg-[#52525B]'
+                }`}
+              />
+            </span>
             <div>
               <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
                 AUTHENTICATED // {currentTeam.team_code}
@@ -80,6 +90,10 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
           </div>
 
           <div className="flex items-stretch">
+            <div className="hidden items-center border-l border-[#222226] px-5 font-mono text-[11px] uppercase tracking-[0.18em] text-[#71717A] md:flex">
+              <LiveTimecode />
+            </div>
+
             <div className="flex items-center border-l border-[#222226] px-6 font-mono text-xs uppercase tracking-[0.18em]">
               <span className={isVotingLive ? 'font-bold text-[#FF2E17]' : 'text-[#8E8E93]'}>
                 {event?.status.replace('_', ' ')}
@@ -97,13 +111,28 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
         </div>
       </header>
 
+      {/* Live Turnout Bar */}
+      {isVotingLive && (
+        <div className="border-b border-[#222226] bg-[#0D0D10] px-6 py-3 sm:px-10">
+          <div className="mx-auto flex max-w-[1440px] flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
+            <span className="shrink-0 font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+              LIVE TURNOUT: <strong className="text-[#F4F2EC]">{progressPercentage}%</strong>
+            </span>
+            <div className="flex-1">
+              <SegmentedProgressBar percentage={progressPercentage} segments={32} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <main className="mx-auto max-w-[1440px]">
         {hasVoted ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mx-auto my-20 max-w-2xl border border-[#222226] bg-[#0D0D10] p-12 text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-telemetry-dots relative mx-auto my-20 max-w-2xl border border-[#222226] bg-[#0D0D10] p-12 text-center"
           >
+            <CornerMarks />
             <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center bg-[#F4F2EC] text-[#09090B]">
               <Check className="h-7 w-7 stroke-[3]" />
             </div>
@@ -181,16 +210,21 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
                         )}
                       </div>
 
-                      <p className="mt-10 font-display text-4xl font-extrabold uppercase tracking-tight sm:text-5xl">
+                      <p className="mt-10 font-display text-4xl font-extrabold uppercase tracking-tight transition-transform duration-200 group-hover:translate-x-1 sm:text-5xl">
                         {team.team_name}
                       </p>
 
-                      <div className="mt-8 border-t border-current/15 pt-4 font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">
-                        {isSelf
-                          ? 'SELF-VOTING PROHIBITED'
-                          : isVotingLive
-                            ? 'CLICK TO SELECT →'
-                            : 'LOCKED'}
+                      <div className="mt-8 flex w-full items-center justify-between border-t border-current/15 pt-4 font-mono text-[10px] uppercase tracking-[0.2em] opacity-70">
+                        <span>
+                          {isSelf
+                            ? 'SELF-VOTING PROHIBITED'
+                            : isVotingLive
+                              ? 'SELECT TO SAVE'
+                              : 'LOCKED'}
+                        </span>
+                        {!isSelf && isVotingLive && (
+                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        )}
                       </div>
                     </motion.button>
                   );
@@ -214,8 +248,9 @@ export function TeamVotingDashboard({ initialEvent, initialTeams, currentTeam }:
               initial={{ scale: 0.96, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.96, opacity: 0 }}
-              className="w-full max-w-md border border-[#F4F2EC] bg-[#09090B] p-8"
+              className="relative w-full max-w-md border border-[#F4F2EC] bg-[#09090B] p-8"
             >
+              <CornerMarks />
               <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#FF2E17]">
                 FINAL CONFIRMATION
               </p>

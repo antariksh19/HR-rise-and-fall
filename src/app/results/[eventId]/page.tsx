@@ -11,6 +11,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  LiveTimecode,
+  CornerMarks,
+  SegmentedProgressBar,
+} from '@/components/ui/BroadcastPrimitives';
 import type { ResultsSnapshot } from '@/types/database';
 
 export default async function ArchivedEventDetailPage({
@@ -35,7 +40,7 @@ export default async function ArchivedEventDetailPage({
   const third = snap.top_three.filter((t) => t.rank === 3);
 
   return (
-    <div className="min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
       <header className="border-b border-[#222226]">
         <div className="mx-auto flex max-w-[1440px] items-stretch justify-between">
           <Link
@@ -44,8 +49,12 @@ export default async function ArchivedEventDetailPage({
           >
             <ArrowLeft className="h-3.5 w-3.5" /> Back to Archive
           </Link>
-          <div className="flex items-center px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
-            FINALIZED {new Date(snap.completed_at).toLocaleDateString()}
+          <div className="flex items-center gap-4 px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+            <span className="hidden sm:inline">
+              FINALIZED {new Date(snap.completed_at).toLocaleDateString()}
+            </span>
+            <span className="text-[#27272A]">/</span>
+            <LiveTimecode />
           </div>
         </div>
       </header>
@@ -68,7 +77,8 @@ export default async function ArchivedEventDetailPage({
 
         {/* Inverted Champion Block + Podium */}
         <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="flex flex-col justify-between border border-[#D4D4D8] bg-[#141418] p-7">
+          <div className="relative flex flex-col justify-between border border-[#D4D4D8] bg-[#141418] p-7">
+            <CornerMarks />
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#A1A1AA]">
               02 / SECOND PLACE
             </span>
@@ -80,7 +90,8 @@ export default async function ArchivedEventDetailPage({
             </span>
           </div>
 
-          <div className="flex flex-col justify-between border border-[#F4F2EC] bg-[#F4F2EC] p-8 text-[#09090B]">
+          <div className="relative flex flex-col justify-between border border-[#F4F2EC] bg-[#F4F2EC] p-8 text-[#09090B]">
+            <CornerMarks light />
             <span className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#FF2E17]">
               01 / CHAMPION
             </span>
@@ -93,7 +104,8 @@ export default async function ArchivedEventDetailPage({
             </span>
           </div>
 
-          <div className="flex flex-col justify-between border border-[#B45309] bg-[#141418] p-7">
+          <div className="relative flex flex-col justify-between border border-[#B45309] bg-[#141418] p-7">
+            <CornerMarks />
             <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#D97706]">
               03 / THIRD PLACE
             </span>
@@ -106,8 +118,9 @@ export default async function ArchivedEventDetailPage({
           </div>
         </section>
 
-        {/* Participation Strip */}
-        <section className="grid grid-cols-3 divide-x divide-[#222226] border border-[#222226] bg-[#0D0D10]">
+        {/* Dot-Matrix Participation Strip */}
+        <section className="bg-telemetry-dots relative grid grid-cols-1 divide-y divide-[#222226] border border-[#222226] bg-[#0D0D10] md:grid-cols-3 md:divide-x md:divide-y-0">
+          <CornerMarks />
           <div className="p-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
               ACTIVE TEAMS
@@ -125,12 +138,20 @@ export default async function ArchivedEventDetailPage({
             </p>
           </div>
           <div className="p-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-              COMPLETION
-            </p>
-            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
-              {snap.voting_completion_percentage}%
-            </p>
+            <div className="flex items-baseline justify-between">
+              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+                COMPLETION
+              </p>
+              <span className="font-mono text-sm font-bold tabular-nums text-[#F4F2EC]">
+                {snap.voting_completion_percentage}%
+              </span>
+            </div>
+            <div className="mt-5">
+              <SegmentedProgressBar
+                percentage={Number(snap.voting_completion_percentage)}
+                segments={20}
+              />
+            </div>
           </div>
         </section>
 
