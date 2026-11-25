@@ -2,13 +2,12 @@
 
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowUpRight, Monitor, Shield, Archive, Vote, Radio } from 'lucide-react';
+import { ArrowUpRight, Monitor, Shield, Archive, Vote, Radio, ShieldCheck } from 'lucide-react';
 import { useEventRealtime } from '@/hooks/useEventRealtime';
 import { SuspenseReveal } from '@/components/results/SuspenseReveal';
 import {
   LiveTimecode,
   AnimatedNumber,
-  SegmentedProgressBar,
   CornerMarks,
   BroadcastPhaseBar,
 } from '@/components/ui/BroadcastPrimitives';
@@ -16,7 +15,7 @@ import type { EventRecord, TeamRecord } from '@/types/database';
 
 const STATUS_LABELS: Record<EventRecord['status'], string> = {
   not_started: 'STANDBY — VOTING NOT STARTED',
-  voting_live: 'ON AIR — VOTING IS LIVE',
+  voting_live: 'ON AIR — AUDIENCE VOTING LIVE',
   voting_completed: 'SEALED — BALLOTS LOCKED',
   revealing: 'LIVE — PODIUM REVEAL',
   completed: 'FINAL — RESULTS OFFICIAL',
@@ -31,12 +30,8 @@ export function PublicDashboard({
   initialTeams: TeamRecord[];
   hasArchives: boolean;
 }) {
-  const { event, teams, recentTeamIds, progressPercentage, connectionStatus } =
+  const { event, teams, recentTeamIds, connectionStatus } =
     useEventRealtime(initialEvent, initialTeams);
-
-  const remaining = event
-    ? Math.max(0, event.active_team_count - event.valid_vote_count)
-    : 0;
 
   const isLive = event?.status === 'voting_live' || event?.status === 'revealing';
   const statusText = event ? STATUS_LABELS[event.status] : 'OFFLINE';
@@ -102,20 +97,20 @@ export function PublicDashboard({
             </Link>
 
             <Link
-              href="/login"
+              href="/vote"
               className="group flex items-center gap-2 border-l border-[#222226] bg-[#F4F2EC] px-7 text-xs font-bold uppercase tracking-[0.14em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
             >
-              <span>Team Login</span>
+              <span>Vote Now</span>
               <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </Link>
           </nav>
 
           {/* Mobile Header Primary Action */}
           <Link
-            href="/login"
+            href="/vote"
             className="flex items-center gap-1.5 border-l border-[#222226] bg-[#F4F2EC] px-4 font-mono text-[11px] font-bold uppercase tracking-[0.14em] text-[#09090B] active:bg-[#FF2E17] active:text-white md:hidden"
           >
-            <span>Vote</span>
+            <span>Vote Now</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
         </div>
@@ -132,11 +127,9 @@ export function PublicDashboard({
               <span className="text-[#3F3F46]">/</span>
               <span>{event?.name ?? 'HR RISE AND FALL'}</span>
               <span className="text-[#3F3F46]">/</span>
-              <span>{teams.length} ACTIVE TEAMS</span>
+              <span>{teams.length} COMPETING TEAMS</span>
               <span className="text-[#3F3F46]">/</span>
-              <span>
-                FEED: {connectionStatus === 'connected' ? 'SYNCHRONIZED' : 'RECONNECTING'}
-              </span>
+              <span>1 VOTE PER DEVICE</span>
             </span>
           ))}
         </div>
@@ -156,7 +149,7 @@ export function PublicDashboard({
             <CornerMarks />
 
             <div className="flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] sm:text-xs sm:tracking-[0.18em]">
-              <span>[ 01 / LIVE COMPETITION ]</span>
+              <span>[ 01 / AUDIENCE VOTING ]</span>
               <span className={`truncate pl-3 ${isLive ? 'font-bold text-[#FF2E17]' : 'text-[#8E8E93]'}`}>
                 {event?.name ?? 'SEASON LIVE'}
               </span>
@@ -164,7 +157,7 @@ export function PublicDashboard({
 
             <div className="my-7 sm:my-10 lg:my-14">
               <h1 className="font-display text-[clamp(3.35rem,14vw,8.75rem)] font-extrabold uppercase leading-[0.86] tracking-[-0.02em] text-[#F4F2EC]">
-                {['ONE VOTE.', 'ONE SAVED.'].map((line, i) => (
+                {['ONE VOTE.', 'ONE DEVICE.'].map((line, i) => (
                   <span key={line} className="block overflow-hidden">
                     <motion.span
                       className="block"
@@ -199,16 +192,16 @@ export function PublicDashboard({
 
             <div className="flex flex-col justify-between gap-5 border-t border-[#222226] pt-5 sm:flex-row sm:items-end sm:gap-6 sm:pt-6">
               <p className="max-w-md text-sm leading-relaxed text-[#A1A1AA]">
-                Every competing team holds a single irrevocable ballot to save one rival from elimination.
-                Zero-leakage synced and revealed live on stage.
+                The audience decides who stays on top. Every device receives strictly one
+                irrevocable vote—zero-leakage synced and revealed live on stage.
               </p>
 
               <div className="grid grid-cols-2 gap-2.5 sm:flex sm:shrink-0 sm:items-center sm:gap-3">
                 <Link
-                  href="/login"
+                  href="/vote"
                   className="group inline-flex min-h-[48px] items-center justify-center gap-2 bg-[#F4F2EC] px-5 py-3.5 font-mono text-xs font-bold uppercase tracking-[0.14em] text-[#09090B] transition-all active:scale-[0.98] active:bg-[#FF2E17] active:text-white sm:px-6 sm:hover:bg-[#FF2E17] sm:hover:text-white"
                 >
-                  Cast Ballot
+                  Vote Now
                   <ArrowUpRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </Link>
                 <Link
@@ -254,7 +247,7 @@ export function PublicDashboard({
               </div>
               <div className="p-5 sm:p-8">
                 <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] sm:text-[11px]">
-                  BALLOTS IN
+                  AUDIENCE VOTES
                 </p>
                 <p className="mt-2 font-display text-5xl font-extrabold tabular-nums leading-none text-[#FF2E17] sm:text-6xl">
                   <AnimatedNumber value={event?.valid_vote_count ?? 0} padZero />
@@ -262,21 +255,15 @@ export function PublicDashboard({
               </div>
             </div>
 
-            {/* Segmented Broadcast Meter */}
+            {/* Audience Voting Rule Panel */}
             <div className="p-5 sm:p-8">
-              <div className="mb-3 flex items-baseline justify-between font-mono text-xs uppercase tracking-[0.16em]">
-                <span className="text-[#8E8E93]">COMPLETION</span>
-                <span className="text-lg font-bold tabular-nums text-[#F4F2EC]">
-                  <AnimatedNumber value={progressPercentage} decimals={1} />%
-                </span>
+              <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC]">
+                <ShieldCheck className="h-4 w-4 text-[#22C55E]" />
+                <span>1 VOTE PER DEVICE</span>
               </div>
-
-              <SegmentedProgressBar percentage={progressPercentage} segments={20} />
-
-              <div className="mt-3.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.15em] text-[#8E8E93] sm:text-[11px]">
-                <span>{remaining} PENDING</span>
-                <span>ZERO-LEAKAGE</span>
-              </div>
+              <p className="mt-2 text-xs leading-relaxed text-[#8E8E93]">
+                Device-locked ballots prevent duplicate submissions while keeping all standings sealed until stage reveal.
+              </p>
             </div>
           </div>
         </section>
@@ -416,7 +403,7 @@ export function PublicDashboard({
           </Link>
 
           <Link
-            href="/login"
+            href="/vote"
             className="flex min-h-[58px] flex-col items-center justify-center gap-1 bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white"
           >
             <Vote className="h-4 w-4" />

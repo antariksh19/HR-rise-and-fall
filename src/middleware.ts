@@ -1,5 +1,5 @@
-import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -9,8 +9,10 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (cookiesToSet) => {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
           response = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
@@ -21,22 +23,20 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  const path = request.nextUrl.pathname;
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  // Protect Admin routes (excluding /admin/login)
-  if (path.startsWith('/admin') && path !== '/admin/login' && !user) {
+  const { pathname } = request.nextUrl;
+
+  // Protect /admin routes (except /admin/login)
+  if (pathname.startsWith('/admin') && pathname !== '/admin/login' && !user) {
     return NextResponse.redirect(new URL('/admin/login', request.url));
-  }
-
-  // Protect Team Voting Dashboard
-  if (path.startsWith('/vote') && !user) {
-    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return response;
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/vote/:path*'],
+  matcher: ['/admin/:path*'],
 };

@@ -170,3 +170,13 @@
     rgba(0, 0, 0, 0.72) 100%
   );
 }
+
+/* Refined overhead architectural stage wash (no neon blobs) */
+.stage-overhead-glow {
+  background-image: radial-gradient(
+    ellipse 80% 40% at 50% 0%,
+    rgba(255, 46, 23, 0.07),
+    transparent 70%
+  );
+  background-repeat: no-repeat;
+}

@@ -14,10 +14,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   LiveTimecode,
   AnimatedNumber,
-  SegmentedProgressBar,
   CornerMarks,
 } from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, RankedTeam } from '@/types/database';
+
+export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
   const auth = await requireAdmin();
@@ -32,7 +33,7 @@ export default async function AdminDashboardPage() {
 
   if (!currentEvent) {
     return (
-      <main className="broadcast-grain mx-auto max-w-4xl p-12 text-center font-mono text-xs uppercase tracking-widest text-[#8E8E93]">
+      <main className="broadcast-grain flex min-h-dvh items-center justify-center bg-[#09090B] p-12 text-center font-mono text-xs uppercase tracking-widest text-[#8E8E93]">
         NO ACTIVE EVENT FOUND. SEED AN EVENT WITH IS_CURRENT = TRUE IN SUPABASE.
       </main>
     );
@@ -47,7 +48,7 @@ export default async function AdminDashboardPage() {
         .order('created_at', { ascending: true }),
       adminClient
         .from('votes')
-        .select('id, voter_team_id, target_team_id, status, created_at')
+        .select('id, voter_team_id, target_team_id, voter_name, device_id, status, created_at')
         .eq('event_id', currentEvent.id)
         .order('created_at', { ascending: false }),
       adminClient.rpc('compute_event_rankings', { p_event_id: currentEvent.id }),
@@ -60,31 +61,29 @@ export default async function AdminDashboardPage() {
   const teamMap = new Map((teams ?? []).map((t) => [t.id, t]));
   const voteRows: VoteRecordRow[] = (rawVotes ?? []).map((v) => ({
     id: v.id,
-    voter_name: teamMap.get(v.voter_team_id)?.team_name ?? 'Unknown',
-    voter_code: teamMap.get(v.voter_team_id)?.team_code ?? '',
+    voter_name:
+      v.voter_name?.trim() ||
+      (v.voter_team_id
+        ? teamMap.get(v.voter_team_id)?.team_name ?? 'Unknown'
+        : 'Audience Member'),
+    voter_code: v.voter_team_id
+      ? teamMap.get(v.voter_team_id)?.team_code ?? ''
+      : `DEV-${(v.device_id ?? 'ANON').slice(0, 6).toUpperCase()}`,
     target_name: teamMap.get(v.target_team_id)?.team_name ?? 'Unknown',
     target_code: teamMap.get(v.target_team_id)?.team_code ?? '',
     status: v.status,
     created_at: v.created_at,
   }));
 
-  const completionPct =
-    currentEvent.active_team_count > 0
-      ? Math.min(
-          100,
-          Number(((currentEvent.valid_vote_count / currentEvent.active_team_count) * 100).toFixed(1))
-        )
-      : 0;
-
   const isLive = currentEvent.status === 'voting_live' || currentEvent.status === 'revealing';
 
   return (
-    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-dvh bg-[#09090B] text-[#F4F2EC]">
       {/* Control Room Header */}
-      <header className="border-b border-[#222226] bg-[#09090B]">
-        <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-6 py-6 lg:flex-row lg:items-center lg:px-10">
+      <header className="pt-safe border-b border-[#222226] bg-[#09090B]">
+        <div className="mx-auto flex max-w-[1440px] flex-col justify-between gap-4 px-4 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-center lg:px-10">
           <div>
-            <div className="flex flex-wrap items-center gap-3 font-mono text-[11px] uppercase tracking-[0.2em]">
+            <div className="flex flex-wrap items-center gap-2.5 font-mono text-[10px] uppercase tracking-[0.18em] sm:gap-3 sm:text-[11px] sm:tracking-[0.2em]">
               <span className="inline-flex items-center gap-2 text-[#FF2E17]">
                 <span className="relative flex h-2 w-2">
                   {isLive && (
@@ -95,22 +94,22 @@ export default async function AdminDashboardPage() {
                 CONTROL ROOM
               </span>
               <span className="text-[#27272A]">/</span>
-              <span className="text-[#8E8E93]">{auth.admin.email}</span>
-              <span className="text-[#27272A]">/</span>
-              <span className="text-[#71717A]">
+              <span className="truncate text-[#8E8E93]">{auth.admin.email}</span>
+              <span className="hidden text-[#27272A] sm:inline">/</span>
+              <span className="hidden text-[#71717A] sm:inline">
                 <LiveTimecode />
               </span>
             </div>
 
-            <h1 className="mt-1.5 font-display text-4xl font-extrabold uppercase tracking-tight sm:text-5xl">
+            <h1 className="mt-1.5 font-display text-3xl font-extrabold uppercase tracking-tight sm:text-5xl">
               {currentEvent.name}
             </h1>
 
-            <div className="mt-3 flex flex-wrap items-center gap-5 font-mono text-[11px] uppercase tracking-[0.16em]">
+            <div className="mt-3 flex flex-wrap items-center gap-4 font-mono text-[11px] uppercase tracking-[0.16em] sm:gap-5">
               <Link
                 href="/"
                 target="_blank"
-                className="group inline-flex items-center gap-1 text-[#A1A1AA] transition-colors hover:text-[#F4F2EC]"
+                className="group inline-flex items-center gap-1 text-[#A1A1AA] transition-colors active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
               >
                 Public Stage
                 <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -118,14 +117,22 @@ export default async function AdminDashboardPage() {
               <Link
                 href="/display"
                 target="_blank"
-                className="inline-flex items-center gap-1.5 text-[#A1A1AA] transition-colors hover:text-[#F4F2EC]"
+                className="inline-flex items-center gap-1.5 text-[#A1A1AA] transition-colors active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
               >
                 <Monitor className="h-3.5 w-3.5" /> Event Hall Display
+              </Link>
+              <Link
+                href="/vote"
+                target="_blank"
+                className="group inline-flex items-center gap-1 text-[#FF2E17] transition-colors active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
+              >
+                Audience Ballot
+                <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               </Link>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
             <AdminRealtimeSync eventId={currentEvent.id} />
             <VotingControls event={currentEvent as EventRecord} />
             <AdminSignOutButton />
@@ -137,40 +144,38 @@ export default async function AdminDashboardPage() {
       <section className="bg-telemetry-dots relative border-b border-[#222226] bg-[#0D0D10]">
         <div className="relative mx-auto grid max-w-[1440px] grid-cols-2 divide-x divide-y divide-[#222226] lg:grid-cols-4 lg:divide-y-0">
           <CornerMarks />
-          <div className="p-6 lg:px-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+          <div className="p-5 sm:p-6 lg:px-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] sm:text-[11px] sm:tracking-[0.2em]">
               ACTIVE TEAMS
             </p>
-            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
+            <p className="mt-2 font-display text-4xl font-extrabold tabular-nums sm:text-5xl">
               <AnimatedNumber value={currentEvent.active_team_count} padZero />
             </p>
           </div>
-          <div className="p-6 lg:px-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-              BALLOTS CAST
+
+          <div className="p-5 sm:p-6 lg:px-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] sm:text-[11px] sm:tracking-[0.2em]">
+              AUDIENCE VOTES
             </p>
-            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums text-[#FF2E17]">
+            <p className="mt-2 font-display text-4xl font-extrabold tabular-nums text-[#FF2E17] sm:text-5xl">
               <AnimatedNumber value={currentEvent.valid_vote_count} padZero />
             </p>
           </div>
-          <div className="p-6 lg:px-10">
-            <div className="flex items-baseline justify-between">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-                COMPLETION
-              </p>
-              <span className="font-mono text-xs font-bold tabular-nums text-[#F4F2EC]">
-                <AnimatedNumber value={completionPct} decimals={1} />%
-              </span>
-            </div>
-            <div className="mt-5">
-              <SegmentedProgressBar percentage={completionPct} segments={18} />
-            </div>
+
+          <div className="p-5 sm:p-6 lg:px-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] sm:text-[11px] sm:tracking-[0.2em]">
+              VOTING RULE
+            </p>
+            <p className="mt-2.5 font-display text-2xl font-extrabold uppercase tracking-wide text-[#F4F2EC] sm:mt-3 sm:text-3xl">
+              1 VOTE / DEVICE
+            </p>
           </div>
-          <div className="p-6 lg:px-10">
-            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+
+          <div className="p-5 sm:p-6 lg:px-10">
+            <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#8E8E93] sm:text-[11px] sm:tracking-[0.2em]">
               EVENT STATUS
             </p>
-            <p className="mt-3 font-display text-3xl font-extrabold uppercase tracking-wide">
+            <p className="mt-2.5 font-display text-2xl font-extrabold uppercase tracking-wide sm:mt-3 sm:text-3xl">
               {currentEvent.status.replace('_', ' ')}
             </p>
           </div>
@@ -197,7 +202,7 @@ export default async function AdminDashboardPage() {
               value="reveal"
               className="min-h-[44px] shrink-0 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC] sm:px-5 sm:text-xs"
             >
-              Reveal
+              Reveal &amp; Archive
             </TabsTrigger>
             <TabsTrigger
               value="admins"

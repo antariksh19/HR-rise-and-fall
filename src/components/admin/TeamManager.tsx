@@ -4,13 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
-  KeyRound,
   Pencil,
   Archive,
   ArchiveRestore,
   Trash2,
-  Copy,
-  Check,
   Loader2,
   AlertTriangle,
   Search,
@@ -43,13 +40,7 @@ export interface AdminTeamRow {
   created_at: string;
 }
 
-interface CredentialModalData {
-  teamName: string;
-  loginId: string;
-  password: string;
-}
-
-type ConfirmActionType = 'reset_password' | 'archive' | 'unarchive' | 'delete_permanent';
+type ConfirmActionType = 'archive' | 'unarchive' | 'delete_permanent';
 
 export function TeamManager({
   eventId,
@@ -64,10 +55,8 @@ export function TeamManager({
   const [isCreating, setIsCreating] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'archived'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
 
-  const [credentialModal, setCredentialModal] = useState<CredentialModalData | null>(null);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<{ team: AdminTeamRow; name: string } | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<{
     type: ConfirmActionType;
@@ -85,7 +74,6 @@ export function TeamManager({
       t.team_code.toLowerCase().includes(searchQuery.trim().toLowerCase());
     if (!matchesQuery) return false;
     if (statusFilter === 'active') return t.is_active;
-    if (statusFilter === 'pending') return t.is_active && !t.has_voted;
     if (statusFilter === 'archived') return !t.is_active;
     return true;
   });
@@ -102,19 +90,14 @@ export function TeamManager({
         body: JSON.stringify({ eventId, teamName: newTeamName.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to create team');
+      if (!res.ok) throw new Error(data.error || 'Failed to add team');
 
       setTeams((prev) => [...prev, data.team]);
       setNewTeamName('');
-      setCredentialModal({
-        teamName: data.team.team_name,
-        loginId: data.credentials.loginId,
-        password: data.credentials.password,
-      });
-      toast.success(`Team "${data.team.team_name}" created.`);
+      toast.success(`"${data.team.team_name}" added to the live roster.`);
       router.refresh();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error creating team');
+      toast.error(err instanceof Error ? err.message : 'Error adding team');
     } finally {
       setIsCreating(false);
     }
@@ -142,7 +125,7 @@ export function TeamManager({
       setTeams((prev) =>
         prev.map((t) => (t.id === renameTarget.team.id ? data.team : t))
       );
-      toast.success('Team renamed and synced.');
+      toast.success('Team renamed and synced live.');
       setRenameTarget(null);
       router.refresh();
     } catch (err) {
@@ -166,15 +149,7 @@ export function TeamManager({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Action failed');
 
-      if (type === 'reset_password') {
-        setConfirmTarget(null);
-        setCredentialModal({
-          teamName: data.teamName,
-          loginId: data.credentials.loginId,
-          password: data.credentials.password,
-        });
-        toast.success('New credentials generated.');
-      } else if (type === 'archive') {
+      if (type === 'archive') {
         setTeams((prev) =>
           prev.map((t) => (t.id === team.id ? { ...t, is_active: false } : t))
         );
@@ -186,7 +161,7 @@ export function TeamManager({
           prev.map((t) => (t.id === team.id ? { ...t, is_active: true } : t))
         );
         setConfirmTarget(null);
-        toast.success(`"${team.team_name}" restored to active competition.`);
+        toast.success(`"${team.team_name}" restored to the roster.`);
         router.refresh();
       } else if (type === 'delete_permanent') {
         setTeams((prev) => prev.filter((t) => t.id !== team.id));
@@ -201,43 +176,30 @@ export function TeamManager({
     }
   }
 
-  function copyText(label: string, value: string) {
-    navigator.clipboard.writeText(value);
-    setCopiedField(label);
-    toast.success(`${label} copied to clipboard.`);
-    setTimeout(() => setCopiedField(null), 2000);
-  }
-
   const getDialogMeta = (target: { type: ConfirmActionType; team: AdminTeamRow }) => {
     switch (target.type) {
-      case 'reset_password':
-        return {
-          title: 'RESET TEAM PASSWORD?',
-          description: `Generate a brand-new password for "${target.team.team_name}" (${target.team.team_code})? Their previous password stops working immediately.`,
-          warning: null,
-          confirmLabel: 'Reset Password',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white',
-        };
       case 'archive':
         return {
           title: `ARCHIVE "${target.team.team_name}"?`,
-          description: `Suspends login access for ${target.team.team_code} and hides them from the live stage. You can restore them anytime.`,
-          warning: 'Any vote cast by this team is invalidated while archived.',
+          description: `Hides "${target.team.team_name}" from the audience ballot and stage display. You can restore them anytime.`,
+          warning: null,
           confirmLabel: 'Archive Team',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white',
+          btnClass:
+            'bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white',
         };
       case 'unarchive':
         return {
           title: `RESTORE "${target.team.team_name}"?`,
-          description: `Re-enables login access for ${target.team.team_code} and puts them back on the live competition board immediately.`,
+          description: `Returns "${target.team.team_name}" to the active audience ballot and live stage immediately.`,
           warning: null,
-          confirmLabel: 'Unarchive Team',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#22C55E] active:text-[#09090B] sm:hover:bg-[#22C55E] sm:hover:text-[#09090B]',
+          confirmLabel: 'Restore Team',
+          btnClass:
+            'bg-[#F4F2EC] text-[#09090B] active:bg-[#22C55E] active:text-[#09090B] sm:hover:bg-[#22C55E] sm:hover:text-[#09090B]',
         };
       case 'delete_permanent':
         return {
           title: `DELETE "${target.team.team_name}"?`,
-          description: `Permanently erases "${target.team.team_name}" (${target.team.team_code}), deletes their login account, and wipes any associated votes.`,
+          description: `Permanently removes "${target.team.team_name}" and wipes any audience votes cast for them.`,
           warning: 'This action is permanent and cannot be undone.',
           confirmLabel: 'Delete Permanently',
           btnClass: 'bg-[#FF2E17] text-white active:bg-[#DC2626] sm:hover:bg-[#DC2626]',
@@ -252,37 +214,37 @@ export function TeamManager({
       {/* Add Team Strip */}
       <form
         onSubmit={handleCreateTeam}
-        className="flex flex-col border border-[#222226] bg-[#0D0D10] sm:flex-row"
+        className="flex flex-col border border-[#24242A] bg-[#0E0E12] transition-colors focus-within:border-[#3F3F46] sm:flex-row"
       >
         <input
-          placeholder="ENTER NEW TEAM NAME (E.G., TEAM ALPHA)"
+          placeholder="ENTER NEW TEAM NAME (E.G., HUNTERS)"
           value={newTeamName}
           onChange={(e) => setNewTeamName(e.target.value)}
-          className="min-h-[48px] flex-1 bg-transparent px-4 py-3 font-mono text-base uppercase tracking-[0.12em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:px-5 sm:py-4 sm:text-xs"
+          className="min-h-[50px] flex-1 bg-transparent px-4 py-3 font-mono text-base uppercase tracking-[0.12em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:px-5 sm:py-4 sm:text-xs"
         />
         <button
           type="submit"
-          disabled={isCreating}
-          className="inline-flex min-h-[48px] items-center justify-center gap-2 border-t border-[#222226] bg-[#F4F2EC] px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white disabled:opacity-50 sm:border-l sm:border-t-0 sm:hover:bg-[#FF2E17] sm:hover:text-white"
+          disabled={isCreating || !newTeamName.trim()}
+          className="inline-flex min-h-[50px] items-center justify-center gap-2 border-t border-[#24242A] bg-[#F4F2EC] px-7 py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white disabled:opacity-45 sm:border-l sm:border-t-0 sm:hover:bg-[#FF2E17] sm:hover:text-white"
         >
           {isCreating ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
           ) : (
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
           )}
-          Add Team &amp; Generate Credentials
+          Add Team
         </button>
       </form>
 
       {/* Search & Filter Bar */}
-      <div className="flex flex-col justify-between gap-3 border border-[#222226] bg-[#0D0D10] p-3 sm:flex-row sm:items-center">
+      <div className="flex flex-col justify-between gap-3 border border-[#24242A] bg-[#0E0E12] p-3 sm:flex-row sm:items-center">
         <div className="flex flex-1 items-center gap-2.5 px-2">
           <Search className="h-4 w-4 shrink-0 text-[#71717A]" />
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="SEARCH TEAMS OR LOGIN ID..."
+            placeholder="SEARCH TEAMS OR CODE..."
             className="min-h-[40px] w-full bg-transparent py-1 font-mono text-base uppercase tracking-[0.12em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:text-xs"
           />
           {searchQuery && (
@@ -296,7 +258,7 @@ export function TeamManager({
           )}
         </div>
         <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-0.5 sm:pb-0">
-          {(['all', 'active', 'pending', 'archived'] as const).map((tab) => (
+          {(['all', 'active', 'archived'] as const).map((tab) => (
             <button
               key={tab}
               type="button"
@@ -313,49 +275,38 @@ export function TeamManager({
         </div>
       </div>
 
-      {/* Mobile Card Stack (Phones) */}
+      {/* Mobile Card Stack */}
       <div className="space-y-3 md:hidden">
         {filteredTeams.length === 0 ? (
-          <div className="border border-[#222226] bg-[#0D0D10] py-12 text-center font-mono text-xs uppercase tracking-[0.18em] text-[#52525B]">
+          <div className="border border-[#24242A] bg-[#0E0E12] py-12 text-center font-mono text-xs uppercase tracking-[0.18em] text-[#52525B]">
             {teams.length === 0
               ? 'NO TEAMS REGISTERED YET.'
               : 'NO TEAMS MATCH YOUR FILTER.'}
           </div>
         ) : (
-          filteredTeams.map((team) => (
+          filteredTeams.map((team, idx) => (
             <div
               key={team.id}
-              className="border border-[#222226] bg-[#0D0D10] p-4"
+              className="border border-[#24242A] bg-[#0E0E12] p-4"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="truncate font-display text-2xl font-extrabold uppercase text-[#F4F2EC]">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717A]">
+                    #{String(idx + 1).padStart(2, '0')} // {team.team_code}
+                  </p>
+                  <p className="mt-1 truncate font-display text-3xl font-extrabold uppercase leading-none text-[#F4F2EC]">
                     {team.team_name}
                   </p>
-                  <p className="mt-0.5 font-mono text-xs uppercase tracking-[0.14em] text-[#8E8E93]">
-                    {team.team_code}
-                  </p>
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-1.5">
-                  {team.is_active ? (
-                    <span className="border border-[#22C55E]/30 bg-[#22C55E]/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#22C55E]">
-                      ● Active
-                    </span>
-                  ) : (
-                    <span className="border border-[#27272A] bg-[#18181B] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#71717A]">
-                      Archived
-                    </span>
-                  )}
-                  {team.has_voted ? (
-                    <span className="bg-[#F4F2EC] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#09090B]">
-                      Voted
-                    </span>
-                  ) : (
-                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#52525B]">
-                      Pending
-                    </span>
-                  )}
-                </div>
+                {team.is_active ? (
+                  <span className="shrink-0 border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#22C55E]">
+                    ● Active
+                  </span>
+                ) : (
+                  <span className="shrink-0 border border-[#27272A] bg-[#18181B] px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.14em] text-[#71717A]">
+                    Archived
+                  </span>
+                )}
               </div>
 
               <div className="mt-4 flex flex-wrap gap-2 border-t border-[#222226] pt-3">
@@ -370,18 +321,10 @@ export function TeamManager({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setConfirmTarget({ type: 'reset_password', team })}
-                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#27272A] bg-[#09090B] px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#F4F2EC] active:border-[#F4F2EC]"
-                    >
-                      <KeyRound className="h-3.5 w-3.5" /> Key
-                    </button>
-                    <button
-                      type="button"
                       onClick={() => setConfirmTarget({ type: 'archive', team })}
-                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[#27272A] bg-[#09090B] px-3 text-[#A1A1AA] active:border-[#F4F2EC]"
-                      aria-label="Archive Team"
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#27272A] bg-[#09090B] px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#A1A1AA] active:border-[#F4F2EC] active:text-[#F4F2EC]"
                     >
-                      <Archive className="h-4 w-4" />
+                      <Archive className="h-3.5 w-3.5" /> Archive
                     </button>
                     <button
                       type="button"
@@ -399,7 +342,7 @@ export function TeamManager({
                       onClick={() => setConfirmTarget({ type: 'unarchive', team })}
                       className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#22C55E]/40 bg-[#22C55E]/10 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E] active:bg-[#22C55E] active:text-[#09090B]"
                     >
-                      <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                      <ArchiveRestore className="h-3.5 w-3.5" /> Restore
                     </button>
                     <button
                       type="button"
@@ -418,21 +361,21 @@ export function TeamManager({
       </div>
 
       {/* Desktop Hairline Teams Table */}
-      <div className="hidden border border-[#222226] bg-[#0D0D10] md:block">
+      <div className="hidden border border-[#24242A] bg-[#0E0E12] md:block">
         <Table>
           <TableHeader>
             <TableRow className="border-[#222226] hover:bg-transparent">
+              <TableHead className="w-16 font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
+                No.
+              </TableHead>
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
                 Team Name
               </TableHead>
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
-                Login ID
+                Code
               </TableHead>
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
                 Status
-              </TableHead>
-              <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
-                Ballot
               </TableHead>
               <TableHead className="text-right font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
                 Actions
@@ -452,15 +395,18 @@ export function TeamManager({
                 </TableCell>
               </TableRow>
             ) : (
-              filteredTeams.map((team) => (
+              filteredTeams.map((team, idx) => (
                 <TableRow
                   key={team.id}
-                  className="border-[#222226] transition-colors hover:bg-[#141418]"
+                  className="border-[#222226] transition-colors hover:bg-[#16161B]"
                 >
+                  <TableCell className="font-mono text-xs text-[#71717A]">
+                    {String(idx + 1).padStart(2, '0')}
+                  </TableCell>
                   <TableCell className="font-display text-2xl font-bold uppercase tracking-tight text-[#F4F2EC]">
                     {team.team_name}
                   </TableCell>
-                  <TableCell className="font-mono text-xs uppercase tracking-[0.14em] text-[#A1A1AA]">
+                  <TableCell className="font-mono text-xs uppercase tracking-[0.14em] text-[#8E8E93]">
                     {team.team_code}
                   </TableCell>
                   <TableCell>
@@ -474,17 +420,6 @@ export function TeamManager({
                       </span>
                     )}
                   </TableCell>
-                  <TableCell>
-                    {team.has_voted ? (
-                      <span className="inline-flex items-center border border-[#F4F2EC]/30 bg-[#F4F2EC] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#09090B]">
-                        Voted
-                      </span>
-                    ) : (
-                      <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[#52525B]">
-                        Pending
-                      </span>
-                    )}
-                  </TableCell>
                   <TableCell className="space-x-1.5 text-right">
                     {team.is_active ? (
                       <>
@@ -495,14 +430,6 @@ export function TeamManager({
                           className="inline-flex h-8 w-8 items-center justify-center border border-[#27272A] bg-[#09090B] text-[#A1A1AA] transition-colors hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          title="Reset Password"
-                          onClick={() => setConfirmTarget({ type: 'reset_password', team })}
-                          className="inline-flex h-8 w-8 items-center justify-center border border-[#27272A] bg-[#09090B] text-[#A1A1AA] transition-colors hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
-                        >
-                          <KeyRound className="h-3.5 w-3.5" />
                         </button>
                         <button
                           type="button"
@@ -525,12 +452,12 @@ export function TeamManager({
                       <>
                         <button
                           type="button"
-                          title="Unarchive Team"
+                          title="Restore Team"
                           onClick={() => setConfirmTarget({ type: 'unarchive', team })}
                           className="inline-flex items-center gap-1.5 border border-[#22C55E]/40 bg-[#22C55E]/10 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E] transition-colors hover:bg-[#22C55E] hover:text-[#09090B]"
                         >
                           <ArchiveRestore className="h-3.5 w-3.5" />
-                          Unarchive
+                          Restore
                         </button>
                         <button
                           type="button"
@@ -561,7 +488,7 @@ export function TeamManager({
               RENAME TEAM
             </DialogTitle>
             <DialogDescription className="text-sm text-[#A1A1AA]">
-              Syncs live across all stage displays without changing credentials or vote history.
+              Syncs live across the audience ballot and stage display immediately.
             </DialogDescription>
           </DialogHeader>
 
@@ -581,7 +508,7 @@ export function TeamManager({
                   onChange={(e) =>
                     setRenameTarget({ ...renameTarget, name: e.target.value })
                   }
-                  className="min-h-[48px] w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 font-mono text-base text-[#F4F2EC] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
+                  className="min-h-[48px] w-full border border-[#27272A] bg-[#0E0E12] px-4 py-3 font-mono text-base text-[#F4F2EC] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
                 />
               </div>
 
@@ -652,85 +579,6 @@ export function TeamManager({
                 </button>
               </DialogFooter>
             </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* One-Time Credential Modal */}
-      <Dialog
-        open={!!credentialModal}
-        onOpenChange={(open) => !open && setCredentialModal(null)}
-      >
-        <DialogContent className="rounded-none border-[#F4F2EC] bg-[#09090B] text-[#F4F2EC] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display text-3xl font-extrabold uppercase tracking-tight text-[#FF2E17]">
-              CREDENTIALS GENERATED
-            </DialogTitle>
-            <DialogDescription className="text-sm text-[#A1A1AA]">
-              Share privately with <strong className="text-[#F4F2EC]">{credentialModal?.teamName}</strong>.
-              For security, this password is shown once.
-            </DialogDescription>
-          </DialogHeader>
-
-          {credentialModal && (
-            <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
-                    Team Login ID
-                  </p>
-                  <p className="mt-1 font-mono text-lg font-bold text-[#F4F2EC]">
-                    {credentialModal.loginId}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyText('Login ID', credentialModal.loginId)}
-                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] active:border-[#F4F2EC] active:text-[#F4F2EC] sm:h-9 sm:w-9 sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
-                >
-                  {copiedField === 'Login ID' ? (
-                    <Check className="h-4 w-4 text-[#22C55E]" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between border border-[#222226] bg-[#0D0D10] p-4">
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93]">
-                    Generated Password
-                  </p>
-                  <p className="mt-1 font-mono text-lg font-bold text-[#FF2E17]">
-                    {credentialModal.password}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => copyText('Password', credentialModal.password)}
-                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] active:border-[#F4F2EC] active:text-[#F4F2EC] sm:h-9 sm:w-9 sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
-                >
-                  {copiedField === 'Password' ? (
-                    <Check className="h-4 w-4 text-[#22C55E]" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  copyText(
-                    'Both credentials',
-                    `Team: ${credentialModal.teamName}\nLogin ID: ${credentialModal.loginId}\nPassword: ${credentialModal.password}`
-                  )
-                }
-                className="flex min-h-[48px] w-full items-center justify-center gap-2 bg-[#F4F2EC] py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white"
-              >
-                <Copy className="h-3.5 w-3.5" /> Copy Both Credentials
-              </button>
-            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -9,7 +9,6 @@ import { SuspenseReveal } from '@/components/results/SuspenseReveal';
 import {
   LiveTimecode,
   AnimatedNumber,
-  SegmentedProgressBar,
   CornerMarks,
   BroadcastPhaseBar,
 } from '@/components/ui/BroadcastPrimitives';
@@ -17,7 +16,7 @@ import type { EventRecord, TeamRecord } from '@/types/database';
 
 const STATUS_LABELS: Record<EventRecord['status'], string> = {
   not_started: 'STANDBY // PRE-SHOW',
-  voting_live: 'ON AIR // VOTING LIVE',
+  voting_live: 'ON AIR // AUDIENCE VOTING LIVE',
   voting_completed: 'VAULT LOCKED // BALLOTS SEALED',
   revealing: 'LIVE // PODIUM REVEAL',
   completed: 'OFFICIAL // FINAL RESULTS',
@@ -30,15 +29,16 @@ export function EventHallDisplay({
   initialEvent: EventRecord | null;
   initialTeams: TeamRecord[];
 }) {
-  const { event, teams, recentTeamIds, progressPercentage, connectionStatus } =
-    useEventRealtime(initialEvent, initialTeams);
+  const { event, teams, recentTeamIds, connectionStatus } = useEventRealtime(
+    initialEvent,
+    initialTeams
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
   const [votePulse, setVotePulse] = useState(false);
 
   const prevVoteCountRef = useRef<number>(initialEvent?.valid_vote_count ?? 0);
 
-  // Trigger a visual broadcast heartbeat whenever a new ballot is locked
   useEffect(() => {
     const currentVotes = event?.valid_vote_count ?? 0;
     if (currentVotes > prevVoteCountRef.current) {
@@ -96,7 +96,7 @@ export function EventHallDisplay({
 
   if (!event) {
     return (
-      <main className="broadcast-grain bg-telemetry-dots flex min-h-dvh items-center justify-center bg-[#09090B] text-[#F4F2EC]">
+      <main className="broadcast-grain bg-telemetry-dots flex h-dvh items-center justify-center overflow-hidden bg-[#09090B] text-[#F4F2EC]">
         <div className="relative border border-[#222226] bg-[#0D0D10] px-14 py-12 text-center">
           <CornerMarks />
           <p className="font-mono text-xs uppercase tracking-[0.35em] text-[#FF2E17]">
@@ -113,19 +113,32 @@ export function EventHallDisplay({
     );
   }
 
-  const remaining = Math.max(0, event.active_team_count - event.valid_vote_count);
   const isLive = event.status === 'voting_live' || event.status === 'revealing';
 
+  // Auto-scale team grid density so large rosters fit cleanly above the pinned footer
+  const teamGridClass =
+    teams.length > 16
+      ? 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6'
+      : teams.length > 8
+        ? 'grid-cols-2 sm:grid-cols-4 lg:grid-cols-5'
+        : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4';
+
+  const teamCardPadding = teams.length > 12 ? 'p-4 lg:p-5' : 'p-6 lg:p-7';
+  const teamNameSize =
+    teams.length > 16
+      ? 'text-2xl lg:text-3xl'
+      : teams.length > 8
+        ? 'text-3xl lg:text-4xl'
+        : 'text-4xl lg:text-5xl';
+
   return (
-    <main className="broadcast-grain relative flex min-h-dvh w-full flex-col justify-between overflow-hidden bg-[#09090B] text-[#F4F2EC]">
+    <main className="broadcast-grain relative flex h-dvh w-full flex-col overflow-hidden bg-[#09090B] text-[#F4F2EC]">
       {/* Architectural Stage Backdrop Layers */}
       <div className="bg-telemetry-dots pointer-events-none fixed inset-0 opacity-45" />
       <div className="stage-vignette pointer-events-none fixed inset-0" />
-
-      {/* Subtle Architectural Vertical Hairlines */}
       <div className="pointer-events-none fixed inset-0 mx-auto max-w-[1600px] border-x border-white/[0.03]" />
 
-      {/* Live Ballot Flash Frame (pulses cleanly around viewport on new vote) */}
+      {/* Live Ballot Flash Frame */}
       <AnimatePresence>
         {votePulse && (
           <motion.div
@@ -138,14 +151,14 @@ export function EventHallDisplay({
         )}
       </AnimatePresence>
 
-      {/* Auto-Hiding Broadcast Top Bar */}
+      {/* Pinned Top Broadcast Header */}
       <header
-        className={`relative z-30 border-b border-[#222226] bg-[#09090B]/90 backdrop-blur-md transition-opacity duration-300 ${
+        className={`relative z-30 shrink-0 border-b border-[#222226] bg-[#09090B]/92 backdrop-blur-md transition-opacity duration-300 ${
           isFullscreen && !hudVisible ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
         <div className="flex items-stretch justify-between">
-          <div className="flex items-center gap-4 px-6 py-4 lg:gap-5 lg:px-10">
+          <div className="flex items-center gap-4 px-6 py-3.5 lg:gap-5 lg:px-10 lg:py-4">
             <span className="relative flex h-3 w-3 shrink-0">
               {isLive && (
                 <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
@@ -203,283 +216,256 @@ export function EventHallDisplay({
           </div>
         </div>
 
-        {/* 5-Stage Live Timeline */}
         <BroadcastPhaseBar status={event.status} />
       </header>
 
-      {/* Main 16:9 Stage */}
-      <section className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 lg:px-16 lg:py-10">
-        <AnimatePresence mode="wait">
-          {/* STATE 1: BEFORE VOTING (PRE-SHOW SHOWCASE) */}
-          {event.status === 'not_started' && (
-            <motion.div
-              key="pre"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="relative mx-auto w-full max-w-[1520px] space-y-10"
-            >
-              {/* Monumental Ghost Watermark */}
-              <span className="pointer-events-none absolute -top-12 right-0 select-none font-display text-[14rem] font-extrabold uppercase leading-none text-white/[0.025] lg:text-[20rem]">
-                READY
-              </span>
-
-              <div className="relative flex flex-col justify-between gap-6 border-b border-[#222226] pb-8 lg:flex-row lg:items-end">
-                <div>
-                  <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#FF2E17]">
-                    [ PRE-SHOW // OFFICIAL COMPETITOR LINEUP ]
-                  </p>
-                  <h2 className="mt-3 font-display text-6xl font-extrabold uppercase leading-[0.86] tracking-tight lg:text-8xl">
-                    EVERY VOTE CHANGES{' '}
-                    <span className="text-[#FF2E17]">THE GAME.</span>
-                  </h2>
-                </div>
-
-                <div className="relative border border-[#222226] bg-[#0D0D10] px-8 py-5 text-left lg:text-right">
-                  <CornerMarks />
-                  <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#8E8E93]">
-                    TEAMS ON STAGE
-                  </p>
-                  <p className="mt-1 font-display text-7xl font-extrabold tabular-nums leading-none text-[#F4F2EC]">
-                    <AnimatedNumber value={teams.length} padZero />
-                  </p>
-                </div>
-              </div>
-
-              {teams.length === 0 ? (
-                <div className="relative border border-[#222226] bg-[#0D0D10]/90 py-24 text-center">
-                  <CornerMarks />
-                  <p className="font-mono text-sm uppercase tracking-[0.3em] text-[#8E8E93]">
-                    AWAITING COMPETITOR REGISTRATION FROM CONTROL ROOM...
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 border-l border-t border-[#222226] sm:grid-cols-3 lg:grid-cols-4">
-                  <AnimatePresence mode="popLayout">
-                    {teams.map((team, idx) => {
-                      const isNew = recentTeamIds.has(team.id);
-                      const serial = String(idx + 1).padStart(2, '0');
-                      return (
-                        <motion.div
-                          key={team.id}
-                          layout
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ duration: 0.3 }}
-                          className={`relative overflow-hidden border-b border-r border-[#222226] p-6 lg:p-8 ${
-                            isNew
-                              ? 'bg-[#FF2E17] text-white'
-                              : 'bg-[#0D0D10]/90 text-[#F4F2EC]'
-                          }`}
-                        >
-                          {/* Oversized Serial Watermark */}
-                          <span className="pointer-events-none absolute -right-2 -bottom-5 select-none font-display text-8xl font-extrabold leading-none opacity-[0.06]">
-                            {serial}
-                          </span>
-
-                          <div className="relative flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.2em]">
-                            <span className={isNew ? 'font-bold text-white' : 'text-[#8E8E93]'}>
-                              {isNew ? '● NEW ENTRY' : `NO. ${serial}`}
-                            </span>
-                            <span className="opacity-50">{team.team_code}</span>
-                          </div>
-
-                          <p className="relative mt-6 truncate font-display text-4xl font-extrabold uppercase tracking-tight lg:text-5xl">
-                            {team.team_name}
-                          </p>
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* STATE 2: VOTING LIVE (HIGH-TENSION TELEMETRY DECK) */}
-          {event.status === 'voting_live' && (
-            <motion.div
-              key="live"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className="relative mx-auto w-full max-w-[1400px]"
-            >
-              {/* Monumental Ghost Percentage Behind Stage */}
-              <span className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[22rem] font-extrabold leading-none text-white/[0.02] lg:text-[30rem]">
-                {Math.round(progressPercentage)}%
-              </span>
-
-              <div
-                className={`relative border bg-[#0D0D10]/95 p-8 transition-colors duration-300 lg:p-14 ${
-                  votePulse ? 'border-[#FF2E17]' : 'border-[#222226]'
-                }`}
+      {/* Scroll-Safe Center Stage (never pushes the lower-third footer off-screen) */}
+      <section className="no-scrollbar relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-6 lg:px-14 lg:py-8">
+        <div className="my-auto w-full">
+          <AnimatePresence mode="wait">
+            {/* STATE 1: PRE-SHOW SHOWCASE */}
+            {event.status === 'not_started' && (
+              <motion.div
+                key="pre"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative mx-auto w-full max-w-[1520px] space-y-6 lg:space-y-8"
               >
-                <CornerMarks />
+                <span className="pointer-events-none absolute -top-10 right-0 select-none font-display text-[12rem] font-extrabold uppercase leading-none text-white/[0.025] lg:text-[18rem]">
+                  READY
+                </span>
 
-                {/* Top Status Row */}
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#222226] pb-6">
-                  <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.28em] text-[#FF2E17] lg:text-sm">
-                    <span className="relative flex h-2.5 w-2.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
-                      <span className="relative inline-flex h-2.5 w-2.5 bg-[#FF2E17]" />
-                    </span>
-                    ON AIR // LIVE BALLOT COUNT
-                  </div>
-
-                  <AnimatePresence mode="wait">
-                    {votePulse ? (
-                      <motion.span
-                        key="pulse"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0 }}
-                        className="bg-[#FF2E17] px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-[0.22em] text-white"
-                      >
-                        ● NEW BALLOT LOCKED
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="idle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-[#8E8E93]"
-                      >
-                        <ShieldCheck className="h-4 w-4 text-[#22C55E]" />
-                        ENCRYPTED ZERO-LEAKAGE FEED
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Main Percentage Hero */}
-                <div className="my-8 flex flex-col justify-between gap-6 lg:my-10 lg:flex-row lg:items-end">
+                <div className="relative flex flex-col justify-between gap-4 border-b border-[#222226] pb-6 lg:flex-row lg:items-end">
                   <div>
-                    <h2 className="font-display text-5xl font-extrabold uppercase leading-[0.9] tracking-tight lg:text-7xl">
-                      BALLOTS
-                      <br />
-                      <span className="text-[#8E8E93]">IN PROGRESS</span>
+                    <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#FF2E17]">
+                      [ PRE-SHOW // OFFICIAL COMPETITOR LINEUP ]
+                    </p>
+                    <h2 className="mt-2 font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight lg:text-7xl">
+                      EVERY VOTE CHANGES{' '}
+                      <span className="text-[#FF2E17]">THE GAME.</span>
                     </h2>
                   </div>
 
-                  <div className="text-left lg:text-right">
-                    <p className="font-display text-[clamp(6.5rem,15vw,13rem)] font-extrabold tabular-nums leading-[0.78] tracking-tight text-[#F4F2EC]">
-                      <AnimatedNumber value={progressPercentage} decimals={1} />
-                      <span className="text-[#FF2E17]">%</span>
+                  <div className="relative border border-[#222226] bg-[#0D0D10] px-7 py-4 text-left lg:text-right">
+                    <CornerMarks />
+                    <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#8E8E93]">
+                      TEAMS ON STAGE
+                    </p>
+                    <p className="mt-1 font-display text-6xl font-extrabold tabular-nums leading-none text-[#F4F2EC]">
+                      <AnimatedNumber value={teams.length} padZero />
                     </p>
                   </div>
                 </div>
 
-                {/* 40-Segment Broadcast LED Meter */}
-                <SegmentedProgressBar percentage={progressPercentage} segments={40} tall />
-
-                {/* 3-Column High-Contrast Telemetry Strip */}
-                <div className="mt-8 grid grid-cols-3 divide-x divide-[#222226] border border-[#222226] bg-[#09090B]">
-                  <div className="p-6 lg:p-9">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
-                      01 / REGISTERED TEAMS
-                    </p>
-                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none lg:text-8xl">
-                      <AnimatedNumber value={event.active_team_count} padZero />
+                {teams.length === 0 ? (
+                  <div className="relative border border-[#222226] bg-[#0D0D10]/90 py-20 text-center">
+                    <CornerMarks />
+                    <p className="font-mono text-sm uppercase tracking-[0.3em] text-[#8E8E93]">
+                      AWAITING COMPETITOR REGISTRATION FROM CONTROL ROOM...
                     </p>
                   </div>
+                ) : (
+                  <div className={`grid border-l border-t border-[#222226] ${teamGridClass}`}>
+                    <AnimatePresence mode="popLayout">
+                      {teams.map((team, idx) => {
+                        const isNew = recentTeamIds.has(team.id);
+                        const serial = String(idx + 1).padStart(2, '0');
+                        return (
+                          <motion.div
+                            key={team.id}
+                            layout
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.25 }}
+                            className={`relative overflow-hidden border-b border-r border-[#222226] ${teamCardPadding} ${
+                              isNew
+                                ? 'bg-[#FF2E17] text-white'
+                                : 'bg-[#0D0D10]/90 text-[#F4F2EC]'
+                            }`}
+                          >
+                            <span className="pointer-events-none absolute -right-2 -bottom-4 select-none font-display text-7xl font-extrabold leading-none opacity-[0.06]">
+                              {serial}
+                            </span>
 
-                  <div className="relative p-6 lg:p-9">
-                    {votePulse && (
-                      <span className="absolute inset-x-0 top-0 h-1 bg-[#FF2E17]" />
-                    )}
-                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#FF2E17]">
-                      02 / BALLOTS LOCKED
-                    </p>
-                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none text-[#FF2E17] lg:text-8xl">
-                      <AnimatedNumber value={event.valid_vote_count} padZero />
-                    </p>
+                            <div className="relative flex items-center justify-between font-mono text-[10px] uppercase tracking-[0.2em]">
+                              <span className={isNew ? 'font-bold text-white' : 'text-[#8E8E93]'}>
+                                {isNew ? '● NEW' : `NO. ${serial}`}
+                              </span>
+                              <span className="opacity-50">{team.team_code}</span>
+                            </div>
+
+                            <p
+                              className={`relative mt-4 truncate font-display font-extrabold uppercase tracking-tight ${teamNameSize}`}
+                            >
+                              {team.team_name}
+                            </p>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </motion.div>
+            )}
+
+            {/* STATE 2: AUDIENCE VOTING LIVE */}
+            {event.status === 'voting_live' && (
+              <motion.div
+                key="live"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative mx-auto w-full max-w-[1400px]"
+              >
+                <div
+                  className={`relative border bg-[#0D0D10]/95 p-8 transition-colors duration-300 lg:p-12 ${
+                    votePulse ? 'border-[#FF2E17]' : 'border-[#222226]'
+                  }`}
+                >
+                  <CornerMarks />
+
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#222226] pb-5">
+                    <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.28em] text-[#FF2E17] lg:text-sm">
+                      <span className="relative flex h-2.5 w-2.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
+                        <span className="relative inline-flex h-2.5 w-2.5 bg-[#FF2E17]" />
+                      </span>
+                      ON AIR // AUDIENCE VOTING LIVE
+                    </div>
+
+                    <AnimatePresence mode="wait">
+                      {votePulse ? (
+                        <motion.span
+                          key="pulse"
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0 }}
+                          className="bg-[#FF2E17] px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-[0.22em] text-white"
+                        >
+                          ● NEW AUDIENCE VOTE RECORDED
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="idle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-[#8E8E93]"
+                        >
+                          <ShieldCheck className="h-4 w-4 text-[#22C55E]" />
+                          1 VOTE PER DEVICE ENFORCED
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
 
-                  <div className="p-6 lg:p-9">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
-                      03 / YET TO VOTE
-                    </p>
-                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none text-[#F4F2EC] lg:text-8xl">
-                      <AnimatedNumber value={remaining} padZero />
-                    </p>
+                  <div className="my-8 flex flex-col justify-between gap-6 lg:my-12 lg:flex-row lg:items-end">
+                    <div>
+                      <h2 className="font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight lg:text-8xl">
+                        AUDIENCE
+                        <br />
+                        <span className="text-[#8E8E93]">VOTES CAST</span>
+                      </h2>
+                    </div>
+
+                    <div className="text-left lg:text-right">
+                      <p className="font-display text-[clamp(6.5rem,14vw,13rem)] font-extrabold tabular-nums leading-[0.76] tracking-tight text-[#FF2E17]">
+                        <AnimatedNumber value={event.valid_vote_count} padZero />
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 divide-x divide-[#222226] border border-[#222226] bg-[#09090B]">
+                    <div className="p-6 lg:p-8">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+                        01 / COMPETING TEAMS
+                      </p>
+                      <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none lg:text-7xl">
+                        <AnimatedNumber value={event.active_team_count} padZero />
+                      </p>
+                    </div>
+                    <div className="p-6 lg:p-8">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+                        02 / VOTING RULE
+                      </p>
+                      <p className="mt-4 font-display text-4xl font-extrabold uppercase leading-none text-[#F4F2EC] lg:text-5xl">
+                        1 VOTE / DEVICE
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
+              </motion.div>
+            )}
 
-          {/* STATE 3: BALLOTS SEALED (HIGH-DRAMA VAULT STANDBY) */}
-          {event.status === 'voting_completed' && (
-            <motion.div
-              key="closed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="relative mx-auto w-full max-w-5xl overflow-hidden border border-[#222226] bg-[#0D0D10]/95 px-8 py-20 text-center lg:py-28"
-            >
-              <CornerMarks />
-              {/* Sweeping Red Laser Scanline */}
-              <div className="animate-scan-sweep pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF2E17] to-transparent shadow-[0_0_20px_#FF2E17]" />
+            {/* STATE 3: BALLOTS SEALED */}
+            {event.status === 'voting_completed' && (
+              <motion.div
+                key="closed"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="relative mx-auto w-full max-w-5xl overflow-hidden border border-[#222226] bg-[#0D0D10]/95 px-8 py-16 text-center lg:py-24"
+              >
+                <CornerMarks />
+                <div className="animate-scan-sweep pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF2E17] to-transparent shadow-[0_0_20px_#FF2E17]" />
 
-              <div className="mx-auto mb-6 inline-flex items-center gap-2.5 border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.3em] text-[#FF2E17]">
-                <Lock className="h-3.5 w-3.5" />
-                VAULT SEALED // {event.valid_vote_count} BALLOTS VERIFIED
-              </div>
+                <div className="mx-auto mb-6 inline-flex items-center gap-2.5 border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.3em] text-[#FF2E17]">
+                  <Lock className="h-3.5 w-3.5" />
+                  VAULT SEALED // {event.valid_vote_count} AUDIENCE VOTES VERIFIED
+                </div>
 
-              <h2 className="font-display text-7xl font-extrabold uppercase leading-[0.88] tracking-tight lg:text-[9.5rem]">
-                THE VOTES
-                <br />
-                <span className="text-[#FF2E17]">ARE IN.</span>
-              </h2>
+                <h2 className="font-display text-7xl font-extrabold uppercase leading-[0.88] tracking-tight lg:text-[9rem]">
+                  THE VOTES
+                  <br />
+                  <span className="text-[#FF2E17]">ARE IN.</span>
+                </h2>
 
-              <p className="mx-auto mt-8 max-w-xl font-mono text-xs uppercase tracking-[0.26em] text-[#A1A1AA] lg:text-sm">
-                THE FATE OF EVERY TEAM HAS BEEN DECIDED. STAND BY FOR THE LIVE TOP THREE REVEAL.
-              </p>
-            </motion.div>
-          )}
+                <p className="mx-auto mt-8 max-w-xl font-mono text-xs uppercase tracking-[0.26em] text-[#A1A1AA] lg:text-sm">
+                  THE AUDIENCE HAS DECIDED. STAND BY FOR THE LIVE TOP THREE REVEAL.
+                </p>
+              </motion.div>
+            )}
 
-          {/* STATE 4 & 5: SYNCHRONIZED REVEAL & FINAL PODIUM */}
-          {(event.status === 'revealing' || event.status === 'completed') && (
-            <motion.div
-              key="reveal"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="w-full"
-            >
-              <SuspenseReveal event={event} large />
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* STATE 4 & 5: SYNCHRONIZED REVEAL & FINAL PODIUM */}
+            {(event.status === 'revealing' || event.status === 'completed') && (
+              <motion.div
+                key="reveal"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="w-full"
+              >
+                <SuspenseReveal event={event} large />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </section>
 
-      {/* Live Broadcast Lower-Third Ticker + Status Footer */}
-      <footer className="relative z-20 border-t border-[#222226] bg-[#09090B]/95">
-        {(event.status === 'not_started' || event.status === 'voting_live') && (
-          <div className="overflow-hidden border-b border-[#222226] bg-[#111114] py-2">
-            <div className="animate-marquee font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
-              {Array.from({ length: 8 }).map((_, i) => (
-                <span key={i} className="mx-8 inline-flex items-center gap-4">
-                  <span className={isLive ? 'font-bold text-[#FF2E17]' : 'text-[#F4F2EC]'}>
-                    ● {STATUS_LABELS[event.status]}
-                  </span>
-                  <span className="text-[#3F3F46]">/</span>
-                  <span>{event.name}</span>
-                  <span className="text-[#3F3F46]">/</span>
-                  <span>
-                    {event.valid_vote_count} OF {event.active_team_count} BALLOTS LOCKED
-                  </span>
-                  <span className="text-[#3F3F46]">/</span>
-                  <span>ONE VOTE • ONE SAVED • WHO RISES</span>
+      {/* Permanently Pinned Lower-Third Ticker & Broadcast Footer */}
+      <footer className="relative z-30 shrink-0 border-t border-[#222226] bg-[#09090B]/95 backdrop-blur-md">
+        <div className="overflow-hidden border-b border-[#222226] bg-[#111114] py-2">
+          <div className="animate-marquee font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <span key={i} className="mx-8 inline-flex items-center gap-4">
+                <span className={isLive ? 'font-bold text-[#FF2E17]' : 'text-[#F4F2EC]'}>
+                  ● {STATUS_LABELS[event.status]}
                 </span>
-              ))}
-            </div>
+                <span className="text-[#3F3F46]">/</span>
+                <span>{event.name}</span>
+                <span className="text-[#3F3F46]">/</span>
+                <span>
+                  {event.valid_vote_count} AUDIENCE VOTES • {event.active_team_count} TEAMS
+                </span>
+                <span className="text-[#3F3F46]">/</span>
+                <span>1 VOTE PER DEVICE • WHO RISES</span>
+              </span>
+            ))}
           </div>
-        )}
+        </div>
 
-        <div className="flex items-center justify-between px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[#52525B] lg:px-10">
+        <div className="flex items-center justify-between px-6 py-2.5 font-mono text-[11px] uppercase tracking-[0.22em] text-[#52525B] lg:px-10">
           <span>HR RISE AND FALL // OFFICIAL STAGE BROADCAST</span>
           <span className="flex items-center gap-3">
             <span className={connectionStatus === 'connected' ? 'text-[#22C55E]' : 'text-[#FF2E17]'}>

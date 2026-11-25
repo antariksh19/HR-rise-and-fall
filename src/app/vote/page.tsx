@@ -1,48 +1,37 @@
-import { redirect } from 'next/navigation';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { TeamVotingDashboard } from '@/components/voting/TeamVotingDashboard';
+import { AudienceVotingDashboard } from '@/components/voting/AudienceVotingDashboard';
 import type { EventRecord, TeamRecord } from '@/types/database';
 
-export default async function TeamVotePage() {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export const dynamic = 'force-dynamic';
 
-  if (!user) redirect('/login');
-
+export default async function AudienceVotePage() {
   const adminClient = createAdminClient();
 
-  // Look up the team bound strictly to this authenticated session
-  const { data: currentTeam } = await adminClient
-    .from('teams')
-    .select('id, event_id, team_name, team_code, is_active, has_voted, created_at')
-    .eq('auth_user_id', user.id)
-    .single();
-
-  if (!currentTeam || !currentTeam.is_active) {
-    redirect('/login');
-  }
-
-  const { data: event } = await adminClient
+  const { data: currentEvent } = await adminClient
     .from('events')
     .select('*')
-    .eq('id', currentTeam.event_id)
-    .single();
+    .eq('is_current', true)
+    .maybeSingle();
 
-  if (!event) redirect('/');
+  if (!currentEvent) {
+    return (
+      <main className="broadcast-grain flex min-h-dvh items-center justify-center bg-[#09090B] p-8 text-center font-mono text-xs uppercase tracking-[0.22em] text-[#8E8E93]">
+        NO ACTIVE EVENT CONFIGURED YET.
+      </main>
+    );
+  }
 
-  const { data: activeTeams } = await adminClient
+  const { data: teams } = await adminClient
     .from('teams')
     .select('id, event_id, team_name, team_code, is_active, created_at')
-    .eq('event_id', event.id)
+    .eq('event_id', currentEvent.id)
     .eq('is_active', true)
     .order('created_at', { ascending: true });
 
   return (
-    <TeamVotingDashboard
-      initialEvent={event as EventRecord}
-      initialTeams={(activeTeams ?? []) as TeamRecord[]}
-      currentTeam={currentTeam as TeamRecord & { has_voted: boolean }}
+    <AudienceVotingDashboard
+      initialEvent={currentEvent as EventRecord}
+      initialTeams={(teams ?? []) as TeamRecord[]}
     />
   );
 }
