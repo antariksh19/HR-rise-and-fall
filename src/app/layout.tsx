@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Barlow_Condensed, Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { Toaster } from 'sonner';
 import './globals.css';
@@ -24,6 +24,19 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'HR RISE AND FALL — Live Competition Voting',
   description: 'Real-time event voting and live stage reveal platform.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'HR Rise & Fall',
+  },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+  themeColor: '#09090B',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({
@@ -36,11 +49,11 @@ export default function RootLayout({
       lang="en"
       className={`dark ${barlowCondensed.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-screen bg-[#09090B] font-sans text-[#F4F2EC] antialiased">
+      <body className="min-h-dvh overflow-x-hidden bg-[#09090B] font-sans text-[#F4F2EC] antialiased">
         {children}
         <Toaster
           theme="dark"
-          position="bottom-right"
+          position="top-center"
           toastOptions={{
             style: {
               background: '#111114',

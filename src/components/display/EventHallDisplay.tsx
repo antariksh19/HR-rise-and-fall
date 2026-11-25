@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Maximize2, Minimize2, ArrowLeft } from 'lucide-react';
+import { Maximize2, Minimize2, ArrowLeft, ShieldCheck, Lock } from 'lucide-react';
 import { useEventRealtime } from '@/hooks/useEventRealtime';
 import { SuspenseReveal } from '@/components/results/SuspenseReveal';
 import {
@@ -11,15 +11,16 @@ import {
   AnimatedNumber,
   SegmentedProgressBar,
   CornerMarks,
+  BroadcastPhaseBar,
 } from '@/components/ui/BroadcastPrimitives';
 import type { EventRecord, TeamRecord } from '@/types/database';
 
 const STATUS_LABELS: Record<EventRecord['status'], string> = {
-  not_started: 'STANDBY',
-  voting_live: 'ON AIR — VOTING LIVE',
-  voting_completed: 'BALLOTS SEALED',
-  revealing: 'LIVE REVEAL',
-  completed: 'FINAL RESULTS',
+  not_started: 'STANDBY // PRE-SHOW',
+  voting_live: 'ON AIR // VOTING LIVE',
+  voting_completed: 'VAULT LOCKED // BALLOTS SEALED',
+  revealing: 'LIVE // PODIUM REVEAL',
+  completed: 'OFFICIAL // FINAL RESULTS',
 };
 
 export function EventHallDisplay({
@@ -33,6 +34,21 @@ export function EventHallDisplay({
     useEventRealtime(initialEvent, initialTeams);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [hudVisible, setHudVisible] = useState(true);
+  const [votePulse, setVotePulse] = useState(false);
+
+  const prevVoteCountRef = useRef<number>(initialEvent?.valid_vote_count ?? 0);
+
+  // Trigger a visual broadcast heartbeat whenever a new ballot is locked
+  useEffect(() => {
+    const currentVotes = event?.valid_vote_count ?? 0;
+    if (currentVotes > prevVoteCountRef.current) {
+      setVotePulse(true);
+      const t = setTimeout(() => setVotePulse(false), 1400);
+      prevVoteCountRef.current = currentVotes;
+      return () => clearTimeout(t);
+    }
+    prevVoteCountRef.current = currentVotes;
+  }, [event?.valid_vote_count]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -80,11 +96,17 @@ export function EventHallDisplay({
 
   if (!event) {
     return (
-      <main className="broadcast-grain flex min-h-screen items-center justify-center bg-[#09090B] text-[#F4F2EC]">
-        <div className="text-center">
-          <h1 className="font-display text-7xl font-extrabold uppercase">HR RISE &amp; FALL</h1>
-          <p className="mt-4 font-mono text-xs uppercase tracking-[0.3em] text-[#8E8E93]">
-            AWAITING SIGNAL...
+      <main className="broadcast-grain bg-telemetry-dots flex min-h-dvh items-center justify-center bg-[#09090B] text-[#F4F2EC]">
+        <div className="relative border border-[#222226] bg-[#0D0D10] px-14 py-12 text-center">
+          <CornerMarks />
+          <p className="font-mono text-xs uppercase tracking-[0.35em] text-[#FF2E17]">
+            ● CH-01 STANDBY
+          </p>
+          <h1 className="mt-3 font-display text-7xl font-extrabold uppercase leading-none">
+            HR RISE &amp; FALL
+          </h1>
+          <p className="mt-4 font-mono text-xs uppercase tracking-[0.28em] text-[#8E8E93]">
+            AWAITING CONTROL ROOM SIGNAL...
           </p>
         </div>
       </main>
@@ -95,199 +117,331 @@ export function EventHallDisplay({
   const isLive = event.status === 'voting_live' || event.status === 'revealing';
 
   return (
-    <main className="broadcast-grain flex min-h-screen w-full flex-col justify-between bg-[#09090B] text-[#F4F2EC]">
-      {/* Auto-Hiding Broadcast Top Strip */}
+    <main className="broadcast-grain relative flex min-h-dvh w-full flex-col justify-between overflow-hidden bg-[#09090B] text-[#F4F2EC]">
+      {/* Architectural Stage Backdrop Layers */}
+      <div className="bg-telemetry-dots pointer-events-none fixed inset-0 opacity-45" />
+      <div className="stage-vignette pointer-events-none fixed inset-0" />
+
+      {/* Subtle Architectural Vertical Hairlines */}
+      <div className="pointer-events-none fixed inset-0 mx-auto max-w-[1600px] border-x border-white/[0.03]" />
+
+      {/* Live Ballot Flash Frame (pulses cleanly around viewport on new vote) */}
+      <AnimatePresence>
+        {votePulse && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="pointer-events-none fixed inset-0 z-40 border-2 border-[#FF2E17] shadow-[inset_0_0_90px_rgba(255,46,23,0.18)]"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Auto-Hiding Broadcast Top Bar */}
       <header
-        className={`flex items-stretch justify-between border-b border-[#222226] transition-opacity duration-300 ${
+        className={`relative z-30 border-b border-[#222226] bg-[#09090B]/90 backdrop-blur-md transition-opacity duration-300 ${
           isFullscreen && !hudVisible ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
-        <div className="flex items-center gap-5 px-8 py-5">
-          <span className="relative flex h-3 w-3">
-            {isLive && (
-              <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
-            )}
+        <div className="flex items-stretch justify-between">
+          <div className="flex items-center gap-4 px-6 py-4 lg:gap-5 lg:px-10">
+            <span className="relative flex h-3 w-3 shrink-0">
+              {isLive && (
+                <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
+              )}
+              <span
+                className={`relative inline-flex h-3 w-3 ${
+                  isLive ? 'bg-[#FF2E17]' : 'bg-[#F4F2EC]'
+                }`}
+              />
+            </span>
+            <h1 className="font-display text-2xl font-extrabold uppercase tracking-[0.06em] lg:text-3xl">
+              {event.name}
+            </h1>
             <span
-              className={`relative inline-flex h-3 w-3 ${
-                isLive ? 'bg-[#FF2E17]' : 'bg-[#F4F2EC]'
+              className={`hidden border-l border-[#222226] pl-5 font-mono text-xs uppercase tracking-[0.22em] sm:inline ${
+                isLive ? 'font-bold text-[#FF2E17]' : 'text-[#8E8E93]'
               }`}
-            />
-          </span>
-          <h1 className="font-display text-3xl font-extrabold uppercase tracking-[0.05em]">
-            {event.name}
-          </h1>
-          <span className="hidden border-l border-[#222226] pl-5 font-mono text-xs uppercase tracking-[0.22em] text-[#8E8E93] sm:inline">
-            {STATUS_LABELS[event.status]}
-          </span>
-        </div>
-
-        <div className="flex items-stretch">
-          <div className="hidden items-center border-l border-[#222226] px-5 font-mono text-xs uppercase tracking-[0.2em] text-[#71717A] lg:flex">
-            <LiveTimecode />
+            >
+              {STATUS_LABELS[event.status]}
+            </span>
           </div>
 
-          {!isFullscreen && (
-            <Link
-              href="/"
-              className="flex items-center gap-2 border-l border-[#222226] px-5 font-mono text-xs uppercase tracking-[0.18em] text-[#8E8E93] transition-colors hover:bg-[#141417] hover:text-[#F4F2EC]"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" /> Exit
-            </Link>
-          )}
+          <div className="flex items-stretch">
+            <div className="hidden items-center gap-2 border-l border-[#222226] px-5 font-mono text-xs uppercase tracking-[0.2em] text-[#71717A] lg:flex">
+              <span>STAGE-01</span>
+              <span className="text-[#27272A]">/</span>
+              <LiveTimecode />
+            </div>
 
-          <button
-            type="button"
-            onClick={toggleFullscreen}
-            title="Press F to toggle fullscreen"
-            className="flex items-center gap-2 border-l border-[#222226] bg-[#F4F2EC] px-6 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize2 className="h-3.5 w-3.5" /> Exit
-              </>
-            ) : (
-              <>
-                <Maximize2 className="h-3.5 w-3.5" /> Fullscreen
-              </>
+            {!isFullscreen && (
+              <Link
+                href="/"
+                className="flex items-center gap-2 border-l border-[#222226] px-5 font-mono text-xs uppercase tracking-[0.18em] text-[#8E8E93] transition-colors hover:bg-[#141417] hover:text-[#F4F2EC]"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" /> Exit
+              </Link>
             )}
-          </button>
+
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              title="Press F to toggle fullscreen"
+              className="flex items-center gap-2 border-l border-[#222226] bg-[#F4F2EC] px-6 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
+            >
+              {isFullscreen ? (
+                <>
+                  <Minimize2 className="h-3.5 w-3.5" /> Exit
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="h-3.5 w-3.5" /> Fullscreen
+                </>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* 5-Stage Live Timeline */}
+        <BroadcastPhaseBar status={event.status} />
       </header>
 
       {/* Main 16:9 Stage */}
-      <section className="flex flex-1 flex-col justify-center px-8 py-10 lg:px-16">
+      <section className="relative z-10 flex flex-1 flex-col justify-center px-6 py-8 lg:px-16 lg:py-10">
         <AnimatePresence mode="wait">
-          {/* BEFORE VOTING */}
+          {/* STATE 1: BEFORE VOTING (PRE-SHOW SHOWCASE) */}
           {event.status === 'not_started' && (
             <motion.div
               key="pre"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="mx-auto w-full max-w-[1440px] space-y-12"
+              className="relative mx-auto w-full max-w-[1520px] space-y-10"
             >
-              <div className="flex flex-col justify-between gap-6 border-b border-[#222226] pb-8 lg:flex-row lg:items-end">
-                <h2 className="font-display text-6xl font-extrabold uppercase leading-[0.88] lg:text-8xl">
-                  EVERY VOTE CHANGES
-                  <br />
-                  <span className="text-[#FF2E17]">THE GAME.</span>
-                </h2>
-                <div className="text-left lg:text-right">
-                  <p className="font-mono text-xs uppercase tracking-[0.25em] text-[#8E8E93]">
+              {/* Monumental Ghost Watermark */}
+              <span className="pointer-events-none absolute -top-12 right-0 select-none font-display text-[14rem] font-extrabold uppercase leading-none text-white/[0.025] lg:text-[20rem]">
+                READY
+              </span>
+
+              <div className="relative flex flex-col justify-between gap-6 border-b border-[#222226] pb-8 lg:flex-row lg:items-end">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-[0.3em] text-[#FF2E17]">
+                    [ PRE-SHOW // OFFICIAL COMPETITOR LINEUP ]
+                  </p>
+                  <h2 className="mt-3 font-display text-6xl font-extrabold uppercase leading-[0.86] tracking-tight lg:text-8xl">
+                    EVERY VOTE CHANGES{' '}
+                    <span className="text-[#FF2E17]">THE GAME.</span>
+                  </h2>
+                </div>
+
+                <div className="relative border border-[#222226] bg-[#0D0D10] px-8 py-5 text-left lg:text-right">
+                  <CornerMarks />
+                  <p className="font-mono text-[11px] uppercase tracking-[0.25em] text-[#8E8E93]">
                     TEAMS ON STAGE
                   </p>
-                  <p className="font-display text-7xl font-extrabold tabular-nums leading-none">
+                  <p className="mt-1 font-display text-7xl font-extrabold tabular-nums leading-none text-[#F4F2EC]">
                     <AnimatedNumber value={teams.length} padZero />
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 border-l border-t border-[#222226] sm:grid-cols-3 lg:grid-cols-4">
-                <AnimatePresence mode="popLayout">
-                  {teams.map((team, idx) => {
-                    const isNew = recentTeamIds.has(team.id);
-                    return (
-                      <motion.div
-                        key={team.id}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`border-b border-r border-[#222226] p-6 ${
-                          isNew ? 'bg-[#FF2E17] text-white' : 'bg-[#0D0D10]'
-                        }`}
-                      >
-                        <p className="font-mono text-xs uppercase tracking-[0.2em] opacity-60">
-                          {isNew ? '● NEW' : `#${String(idx + 1).padStart(2, '0')}`}
-                        </p>
-                        <p className="mt-4 truncate font-display text-4xl font-extrabold uppercase">
-                          {team.team_name}
-                        </p>
-                      </motion.div>
-                    );
-                  })}
-                </AnimatePresence>
-              </div>
+              {teams.length === 0 ? (
+                <div className="relative border border-[#222226] bg-[#0D0D10]/90 py-24 text-center">
+                  <CornerMarks />
+                  <p className="font-mono text-sm uppercase tracking-[0.3em] text-[#8E8E93]">
+                    AWAITING COMPETITOR REGISTRATION FROM CONTROL ROOM...
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 border-l border-t border-[#222226] sm:grid-cols-3 lg:grid-cols-4">
+                  <AnimatePresence mode="popLayout">
+                    {teams.map((team, idx) => {
+                      const isNew = recentTeamIds.has(team.id);
+                      const serial = String(idx + 1).padStart(2, '0');
+                      return (
+                        <motion.div
+                          key={team.id}
+                          layout
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.3 }}
+                          className={`relative overflow-hidden border-b border-r border-[#222226] p-6 lg:p-8 ${
+                            isNew
+                              ? 'bg-[#FF2E17] text-white'
+                              : 'bg-[#0D0D10]/90 text-[#F4F2EC]'
+                          }`}
+                        >
+                          {/* Oversized Serial Watermark */}
+                          <span className="pointer-events-none absolute -right-2 -bottom-5 select-none font-display text-8xl font-extrabold leading-none opacity-[0.06]">
+                            {serial}
+                          </span>
+
+                          <div className="relative flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.2em]">
+                            <span className={isNew ? 'font-bold text-white' : 'text-[#8E8E93]'}>
+                              {isNew ? '● NEW ENTRY' : `NO. ${serial}`}
+                            </span>
+                            <span className="opacity-50">{team.team_code}</span>
+                          </div>
+
+                          <p className="relative mt-6 truncate font-display text-4xl font-extrabold uppercase tracking-tight lg:text-5xl">
+                            {team.team_name}
+                          </p>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              )}
             </motion.div>
           )}
 
-          {/* VOTING LIVE */}
+          {/* STATE 2: VOTING LIVE (HIGH-TENSION TELEMETRY DECK) */}
           {event.status === 'voting_live' && (
             <motion.div
               key="live"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="relative mx-auto w-full max-w-6xl space-y-10 border border-[#222226] bg-[#0D0D10] p-10 lg:p-14"
+              className="relative mx-auto w-full max-w-[1400px]"
             >
-              <CornerMarks />
-              <div className="flex flex-wrap items-end justify-between gap-6">
-                <div>
-                  <p className="font-mono text-sm font-bold uppercase tracking-[0.3em] text-[#FF2E17]">
-                    ● VOTING IN PROGRESS
-                  </p>
-                  <h2 className="mt-2 font-display text-6xl font-extrabold uppercase lg:text-7xl">
-                    LIVE BALLOT COUNT
-                  </h2>
-                </div>
-                <p className="font-display text-[8rem] font-extrabold tabular-nums leading-[0.8] lg:text-[11rem]">
-                  <AnimatedNumber value={progressPercentage} decimals={1} />%
-                </p>
-              </div>
+              {/* Monumental Ghost Percentage Behind Stage */}
+              <span className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 select-none font-display text-[22rem] font-extrabold leading-none text-white/[0.02] lg:text-[30rem]">
+                {Math.round(progressPercentage)}%
+              </span>
 
-              <SegmentedProgressBar percentage={progressPercentage} segments={36} tall />
+              <div
+                className={`relative border bg-[#0D0D10]/95 p-8 transition-colors duration-300 lg:p-14 ${
+                  votePulse ? 'border-[#FF2E17]' : 'border-[#222226]'
+                }`}
+              >
+                <CornerMarks />
 
-              <div className="grid grid-cols-3 divide-x divide-[#222226] border border-[#222226] bg-[#09090B]">
-                <div className="p-8">
-                  <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#8E8E93]">
-                    REGISTERED
-                  </p>
-                  <p className="mt-3 font-display text-7xl font-extrabold tabular-nums">
-                    <AnimatedNumber value={event.active_team_count} padZero />
-                  </p>
+                {/* Top Status Row */}
+                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#222226] pb-6">
+                  <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-[0.28em] text-[#FF2E17] lg:text-sm">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping bg-[#FF2E17] opacity-75" />
+                      <span className="relative inline-flex h-2.5 w-2.5 bg-[#FF2E17]" />
+                    </span>
+                    ON AIR // LIVE BALLOT COUNT
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {votePulse ? (
+                      <motion.span
+                        key="pulse"
+                        initial={{ opacity: 0, x: 10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="bg-[#FF2E17] px-3.5 py-1 font-mono text-xs font-bold uppercase tracking-[0.22em] text-white"
+                      >
+                        ● NEW BALLOT LOCKED
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="idle"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-[#8E8E93]"
+                      >
+                        <ShieldCheck className="h-4 w-4 text-[#22C55E]" />
+                        ENCRYPTED ZERO-LEAKAGE FEED
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
                 </div>
-                <div className="p-8">
-                  <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#8E8E93]">
-                    VOTES CAST
-                  </p>
-                  <p className="mt-3 font-display text-7xl font-extrabold tabular-nums text-[#FF2E17]">
-                    <AnimatedNumber value={event.valid_vote_count} padZero />
-                  </p>
+
+                {/* Main Percentage Hero */}
+                <div className="my-8 flex flex-col justify-between gap-6 lg:my-10 lg:flex-row lg:items-end">
+                  <div>
+                    <h2 className="font-display text-5xl font-extrabold uppercase leading-[0.9] tracking-tight lg:text-7xl">
+                      BALLOTS
+                      <br />
+                      <span className="text-[#8E8E93]">IN PROGRESS</span>
+                    </h2>
+                  </div>
+
+                  <div className="text-left lg:text-right">
+                    <p className="font-display text-[clamp(6.5rem,15vw,13rem)] font-extrabold tabular-nums leading-[0.78] tracking-tight text-[#F4F2EC]">
+                      <AnimatedNumber value={progressPercentage} decimals={1} />
+                      <span className="text-[#FF2E17]">%</span>
+                    </p>
+                  </div>
                 </div>
-                <div className="p-8">
-                  <p className="font-mono text-xs uppercase tracking-[0.22em] text-[#8E8E93]">
-                    REMAINING
-                  </p>
-                  <p className="mt-3 font-display text-7xl font-extrabold tabular-nums">
-                    <AnimatedNumber value={remaining} padZero />
-                  </p>
+
+                {/* 40-Segment Broadcast LED Meter */}
+                <SegmentedProgressBar percentage={progressPercentage} segments={40} tall />
+
+                {/* 3-Column High-Contrast Telemetry Strip */}
+                <div className="mt-8 grid grid-cols-3 divide-x divide-[#222226] border border-[#222226] bg-[#09090B]">
+                  <div className="p-6 lg:p-9">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+                      01 / REGISTERED TEAMS
+                    </p>
+                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none lg:text-8xl">
+                      <AnimatedNumber value={event.active_team_count} padZero />
+                    </p>
+                  </div>
+
+                  <div className="relative p-6 lg:p-9">
+                    {votePulse && (
+                      <span className="absolute inset-x-0 top-0 h-1 bg-[#FF2E17]" />
+                    )}
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#FF2E17]">
+                      02 / BALLOTS LOCKED
+                    </p>
+                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none text-[#FF2E17] lg:text-8xl">
+                      <AnimatedNumber value={event.valid_vote_count} padZero />
+                    </p>
+                  </div>
+
+                  <div className="p-6 lg:p-9">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+                      03 / YET TO VOTE
+                    </p>
+                    <p className="mt-3 font-display text-6xl font-extrabold tabular-nums leading-none text-[#F4F2EC] lg:text-8xl">
+                      <AnimatedNumber value={remaining} padZero />
+                    </p>
+                  </div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* BALLOTS SEALED */}
+          {/* STATE 3: BALLOTS SEALED (HIGH-DRAMA VAULT STANDBY) */}
           {event.status === 'voting_completed' && (
             <motion.div
               key="closed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="relative mx-auto max-w-5xl border-y border-[#222226] py-20 text-center"
+              className="relative mx-auto w-full max-w-5xl overflow-hidden border border-[#222226] bg-[#0D0D10]/95 px-8 py-20 text-center lg:py-28"
             >
-              <p className="font-mono text-sm font-bold uppercase tracking-[0.35em] text-[#FF2E17]">
-                ● VOTING CLOSED
-              </p>
-              <h2 className="mt-4 font-display text-7xl font-extrabold uppercase leading-[0.9] lg:text-9xl">
-                THE VOTES ARE IN.
+              <CornerMarks />
+              {/* Sweeping Red Laser Scanline */}
+              <div className="animate-scan-sweep pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#FF2E17] to-transparent shadow-[0_0_20px_#FF2E17]" />
+
+              <div className="mx-auto mb-6 inline-flex items-center gap-2.5 border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-4 py-2 font-mono text-xs font-bold uppercase tracking-[0.3em] text-[#FF2E17]">
+                <Lock className="h-3.5 w-3.5" />
+                VAULT SEALED // {event.valid_vote_count} BALLOTS VERIFIED
+              </div>
+
+              <h2 className="font-display text-7xl font-extrabold uppercase leading-[0.88] tracking-tight lg:text-[9.5rem]">
+                THE VOTES
+                <br />
+                <span className="text-[#FF2E17]">ARE IN.</span>
               </h2>
-              <p className="mt-6 font-mono text-sm uppercase tracking-[0.22em] text-[#8E8E93]">
-                STAND BY FOR THE OFFICIAL TOP THREE REVEAL
+
+              <p className="mx-auto mt-8 max-w-xl font-mono text-xs uppercase tracking-[0.26em] text-[#A1A1AA] lg:text-sm">
+                THE FATE OF EVERY TEAM HAS BEEN DECIDED. STAND BY FOR THE LIVE TOP THREE REVEAL.
               </p>
             </motion.div>
           )}
 
-          {/* REVEAL & COMPLETED */}
+          {/* STATE 4 & 5: SYNCHRONIZED REVEAL & FINAL PODIUM */}
           {(event.status === 'revealing' || event.status === 'completed') && (
             <motion.div
               key="reveal"
@@ -301,14 +455,40 @@ export function EventHallDisplay({
         </AnimatePresence>
       </section>
 
-      {/* Broadcast Footer */}
-      <footer className="flex items-center justify-between border-t border-[#222226] px-8 py-3.5 font-mono text-[11px] uppercase tracking-[0.22em] text-[#52525B]">
-        <span>HR RISE AND FALL // OFFICIAL STAGE FEED</span>
-        <span>
-          {connectionStatus === 'connected'
-            ? '● ZERO-LEAKAGE REALTIME // PRESS F FOR FULLSCREEN'
-            : '○ RECONNECTING'}
-        </span>
+      {/* Live Broadcast Lower-Third Ticker + Status Footer */}
+      <footer className="relative z-20 border-t border-[#222226] bg-[#09090B]/95">
+        {(event.status === 'not_started' || event.status === 'voting_live') && (
+          <div className="overflow-hidden border-b border-[#222226] bg-[#111114] py-2">
+            <div className="animate-marquee font-mono text-[11px] uppercase tracking-[0.22em] text-[#8E8E93]">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <span key={i} className="mx-8 inline-flex items-center gap-4">
+                  <span className={isLive ? 'font-bold text-[#FF2E17]' : 'text-[#F4F2EC]'}>
+                    ● {STATUS_LABELS[event.status]}
+                  </span>
+                  <span className="text-[#3F3F46]">/</span>
+                  <span>{event.name}</span>
+                  <span className="text-[#3F3F46]">/</span>
+                  <span>
+                    {event.valid_vote_count} OF {event.active_team_count} BALLOTS LOCKED
+                  </span>
+                  <span className="text-[#3F3F46]">/</span>
+                  <span>ONE VOTE • ONE SAVED • WHO RISES</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between px-6 py-3 font-mono text-[11px] uppercase tracking-[0.22em] text-[#52525B] lg:px-10">
+          <span>HR RISE AND FALL // OFFICIAL STAGE BROADCAST</span>
+          <span className="flex items-center gap-3">
+            <span className={connectionStatus === 'connected' ? 'text-[#22C55E]' : 'text-[#FF2E17]'}>
+              {connectionStatus === 'connected' ? '● LIVE SYNC' : '○ RECONNECTING'}
+            </span>
+            <span className="hidden text-[#27272A] sm:inline">/</span>
+            <span className="hidden sm:inline">PRESS F FOR FULLSCREEN</span>
+          </span>
+        </div>
       </footer>
     </main>
   );

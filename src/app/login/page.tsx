@@ -45,74 +45,61 @@ export default function TeamLoginPage() {
   }
 
   return (
-    <main className="broadcast-grain flex min-h-screen flex-col bg-[#09090B] text-[#F4F2EC]">
+    <main className="broadcast-grain flex min-h-dvh flex-col bg-[#09090B] text-[#F4F2EC]">
       {/* Top Strip */}
-      <header className="flex items-stretch justify-between border-b border-[#222226]">
+      <header className="pt-safe flex items-stretch justify-between border-b border-[#222226]">
         <Link
           href="/"
-          className="flex items-center gap-3 border-r border-[#222226] px-6 py-4 font-mono text-xs uppercase tracking-[0.18em] text-[#8E8E93] transition-colors hover:bg-[#141417] hover:text-[#F4F2EC]"
+          className="flex min-h-[48px] items-center gap-2.5 border-r border-[#222226] px-4 py-3 font-mono text-[11px] uppercase tracking-[0.16em] text-[#8E8E93] transition-colors active:bg-[#141417] active:text-[#F4F2EC] sm:px-6 sm:text-xs"
         >
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to Stage
+          <ArrowLeft className="h-3.5 w-3.5" /> Back
         </Link>
-        <div className="flex items-center gap-4 px-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+        <div className="flex items-center gap-3 px-4 font-mono text-[10px] uppercase tracking-[0.18em] text-[#52525B] sm:px-6 sm:text-[11px]">
           <span className="hidden sm:inline">HR RISE &amp; FALL // TEAM ACCESS</span>
-          <span className="text-[#27272A]">/</span>
+          <span className="hidden text-[#27272A] sm:inline">/</span>
           <LiveTimecode />
         </div>
       </header>
 
-      {/* Split Editorial Login */}
+      {/* Responsive Split: Compact Header + Immediate Form on Mobile */}
       <div className="mx-auto grid w-full max-w-[1440px] flex-1 grid-cols-1 lg:grid-cols-12">
-        {/* Left Statement */}
-        <div className="relative flex flex-col justify-between border-b border-[#222226] p-8 sm:p-12 lg:col-span-7 lg:border-r lg:border-b-0 lg:p-16">
+        {/* Left Statement (Compact on Mobile, Monumental on Desktop) */}
+        <div className="relative flex flex-col justify-between border-b border-[#222226] px-5 py-6 sm:p-12 lg:col-span-7 lg:border-r lg:border-b-0 lg:p-16">
           <CornerMarks />
-          <span className="font-mono text-xs uppercase tracking-[0.22em] text-[#FF2E17]">
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#FF2E17] sm:text-xs">
             [ 01 / BALLOT AUTHENTICATION ]
           </span>
 
-          <div className="my-12">
-            <h1 className="font-display text-6xl font-extrabold uppercase leading-[0.86] tracking-tight sm:text-8xl">
-              {['TEAM', 'VOTING'].map((line, i) => (
-                <span key={line} className="block overflow-hidden">
-                  <motion.span
-                    className="block"
-                    initial={{ y: '105%' }}
-                    animate={{ y: 0 }}
-                    transition={{ duration: 0.5, delay: i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    {line}
-                  </motion.span>
-                </span>
-              ))}
-              <span className="block overflow-hidden">
-                <motion.span
-                  className="block text-[#FF2E17]"
-                  initial={{ y: '105%' }}
-                  animate={{ y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  ROOM.
-                </motion.span>
-              </span>
+          <div className="my-4 lg:my-12">
+            <h1 className="font-display text-5xl font-extrabold uppercase leading-[0.88] tracking-tight sm:text-7xl lg:text-8xl">
+              <span className="inline lg:block">TEAM VOTING </span>
+              <motion.span
+                className="inline text-[#FF2E17] lg:block"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                ROOM.
+              </motion.span>
             </h1>
-            <p className="mt-6 max-w-md text-sm leading-relaxed text-[#A1A1AA]">
-              Enter the unique Team Login ID and one-time password issued by the
-              event control room. Each team receives exactly one irrevocable save vote.
+            <p className="mt-3 max-w-md text-xs leading-relaxed text-[#A1A1AA] sm:mt-6 sm:text-sm">
+              Enter your unique Team Login ID and password issued by the control room.
+              Each team holds one irrevocable save ballot.
             </p>
           </div>
 
-          <div className="flex items-center justify-between border-t border-[#222226] pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B]">
+          <div className="hidden items-center justify-between border-t border-[#222226] pt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[#52525B] lg:flex">
             <span>ONE BALLOT PER TEAM</span>
             <span>ZERO SELF-VOTING</span>
           </div>
         </div>
 
-        {/* Right Form */}
-        <div className="bg-telemetry-dots relative flex flex-col justify-center bg-[#0D0D10] p-8 sm:p-12 lg:col-span-5 lg:p-16">
-          <div className="relative border border-[#222226] bg-[#09090B]/95 p-7 sm:p-9">
+        {/* Right Form (Immediately Reachable on Phone) */}
+        <div className="bg-telemetry-dots pb-safe relative flex flex-1 flex-col justify-center bg-[#0D0D10] p-5 sm:p-12 lg:col-span-5 lg:p-16">
+          <div className="relative border border-[#222226] bg-[#09090B]/95 p-6 sm:p-9">
             <CornerMarks />
-            <div className="mb-8 border-b border-[#222226] pb-4">
-              <p className="font-mono text-xs uppercase tracking-[0.2em] text-[#8E8E93]">
+            <div className="mb-6 border-b border-[#222226] pb-4 sm:mb-8">
+              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#8E8E93] sm:text-xs">
                 CREDENTIALS REQUIRED
               </p>
               <h2 className="mt-1 font-display text-3xl font-extrabold uppercase">
@@ -120,7 +107,7 @@ export default function TeamLoginPage() {
               </h2>
             </div>
 
-            <form onSubmit={handleTeamLogin} className="space-y-6">
+            <form onSubmit={handleTeamLogin} className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
                 <label
                   htmlFor="loginId"
@@ -132,10 +119,15 @@ export default function TeamLoginPage() {
                   id="loginId"
                   type="text"
                   required
+                  autoComplete="username"
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  enterKeyHint="next"
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   placeholder="HRS-8K29Q"
-                  className="w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3.5 font-mono text-sm uppercase tracking-wider text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
+                  className="min-h-[50px] w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 font-mono text-base uppercase tracking-wider text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
                 />
               </div>
 
@@ -151,15 +143,18 @@ export default function TeamLoginPage() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    autoComplete="current-password"
+                    enterKeyHint="go"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••"
-                    className="w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3.5 pr-12 font-mono text-sm text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
+                    className="min-h-[50px] w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 pr-12 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
                   />
                   <button
                     type="button"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8E8E93] transition-colors hover:text-[#F4F2EC]"
+                    className="absolute right-1 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-[#8E8E93] active:text-[#F4F2EC]"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -169,7 +164,7 @@ export default function TeamLoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group flex w-full items-center justify-center gap-2 bg-[#F4F2EC] px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50"
+                className="group flex min-h-[54px] w-full items-center justify-center gap-2 bg-[#F4F2EC] px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.2em] text-[#09090B] transition-all active:scale-[0.98] active:bg-[#FF2E17] active:text-white disabled:opacity-50 sm:hover:bg-[#FF2E17] sm:hover:text-white"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

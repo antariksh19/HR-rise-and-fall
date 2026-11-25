@@ -216,7 +216,7 @@ export function TeamManager({
           description: `Generate a brand-new password for "${target.team.team_name}" (${target.team.team_code})? Their previous password stops working immediately.`,
           warning: null,
           confirmLabel: 'Reset Password',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#FF2E17] hover:text-white',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white',
         };
       case 'archive':
         return {
@@ -224,7 +224,7 @@ export function TeamManager({
           description: `Suspends login access for ${target.team.team_code} and hides them from the live stage. You can restore them anytime.`,
           warning: 'Any vote cast by this team is invalidated while archived.',
           confirmLabel: 'Archive Team',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#FF2E17] hover:text-white',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white',
         };
       case 'unarchive':
         return {
@@ -232,7 +232,7 @@ export function TeamManager({
           description: `Re-enables login access for ${target.team.team_code} and puts them back on the live competition board immediately.`,
           warning: null,
           confirmLabel: 'Unarchive Team',
-          btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#22C55E] hover:text-[#09090B]',
+          btnClass: 'bg-[#F4F2EC] text-[#09090B] active:bg-[#22C55E] active:text-[#09090B] sm:hover:bg-[#22C55E] sm:hover:text-[#09090B]',
         };
       case 'delete_permanent':
         return {
@@ -240,7 +240,7 @@ export function TeamManager({
           description: `Permanently erases "${target.team.team_name}" (${target.team.team_code}), deletes their login account, and wipes any associated votes.`,
           warning: 'This action is permanent and cannot be undone.',
           confirmLabel: 'Delete Permanently',
-          btnClass: 'bg-[#FF2E17] text-white hover:bg-[#DC2626]',
+          btnClass: 'bg-[#FF2E17] text-white active:bg-[#DC2626] sm:hover:bg-[#DC2626]',
         };
     }
   };
@@ -258,12 +258,12 @@ export function TeamManager({
           placeholder="ENTER NEW TEAM NAME (E.G., TEAM ALPHA)"
           value={newTeamName}
           onChange={(e) => setNewTeamName(e.target.value)}
-          className="flex-1 bg-transparent px-5 py-4 font-mono text-xs uppercase tracking-[0.14em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+          className="min-h-[48px] flex-1 bg-transparent px-4 py-3 font-mono text-base uppercase tracking-[0.12em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:px-5 sm:py-4 sm:text-xs"
         />
         <button
           type="submit"
           disabled={isCreating}
-          className="inline-flex items-center justify-center gap-2 border-t border-[#222226] bg-[#F4F2EC] px-6 py-4 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50 sm:border-l sm:border-t-0"
+          className="inline-flex min-h-[48px] items-center justify-center gap-2 border-t border-[#222226] bg-[#F4F2EC] px-6 py-3.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white disabled:opacity-50 sm:border-l sm:border-t-0 sm:hover:bg-[#FF2E17] sm:hover:text-white"
         >
           {isCreating ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -277,34 +277,34 @@ export function TeamManager({
       {/* Search & Filter Bar */}
       <div className="flex flex-col justify-between gap-3 border border-[#222226] bg-[#0D0D10] p-3 sm:flex-row sm:items-center">
         <div className="flex flex-1 items-center gap-2.5 px-2">
-          <Search className="h-3.5 w-3.5 shrink-0 text-[#71717A]" />
+          <Search className="h-4 w-4 shrink-0 text-[#71717A]" />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="SEARCH TEAMS OR LOGIN ID..."
-            className="w-full bg-transparent py-1 font-mono text-xs uppercase tracking-[0.14em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+            className="min-h-[40px] w-full bg-transparent py-1 font-mono text-base uppercase tracking-[0.12em] text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:text-xs"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] hover:text-[#F4F2EC]"
+              className="min-h-[36px] px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
             >
               Clear
             </button>
           )}
         </div>
-        <div className="flex flex-wrap gap-1">
+        <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-0.5 sm:pb-0">
           {(['all', 'active', 'pending', 'archived'] as const).map((tab) => (
             <button
               key={tab}
               type="button"
               onClick={() => setStatusFilter(tab)}
-              className={`px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+              className={`min-h-[36px] shrink-0 px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
                 statusFilter === tab
                   ? 'bg-[#F4F2EC] text-[#09090B]'
-                  : 'border border-[#27272A] text-[#8E8E93] hover:text-[#F4F2EC]'
+                  : 'border border-[#27272A] text-[#8E8E93] active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]'
               }`}
             >
               {tab}
@@ -313,8 +313,112 @@ export function TeamManager({
         </div>
       </div>
 
-      {/* Hairline Teams Table */}
-      <div className="border border-[#222226] bg-[#0D0D10]">
+      {/* Mobile Card Stack (Phones) */}
+      <div className="space-y-3 md:hidden">
+        {filteredTeams.length === 0 ? (
+          <div className="border border-[#222226] bg-[#0D0D10] py-12 text-center font-mono text-xs uppercase tracking-[0.18em] text-[#52525B]">
+            {teams.length === 0
+              ? 'NO TEAMS REGISTERED YET.'
+              : 'NO TEAMS MATCH YOUR FILTER.'}
+          </div>
+        ) : (
+          filteredTeams.map((team) => (
+            <div
+              key={team.id}
+              className="border border-[#222226] bg-[#0D0D10] p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-display text-2xl font-extrabold uppercase text-[#F4F2EC]">
+                    {team.team_name}
+                  </p>
+                  <p className="mt-0.5 font-mono text-xs uppercase tracking-[0.14em] text-[#8E8E93]">
+                    {team.team_code}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  {team.is_active ? (
+                    <span className="border border-[#22C55E]/30 bg-[#22C55E]/10 px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#22C55E]">
+                      ● Active
+                    </span>
+                  ) : (
+                    <span className="border border-[#27272A] bg-[#18181B] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em] text-[#71717A]">
+                      Archived
+                    </span>
+                  )}
+                  {team.has_voted ? (
+                    <span className="bg-[#F4F2EC] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-[#09090B]">
+                      Voted
+                    </span>
+                  ) : (
+                    <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[#52525B]">
+                      Pending
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-[#222226] pt-3">
+                {team.is_active ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setRenameTarget({ team, name: team.team_name })}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#27272A] bg-[#09090B] px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#F4F2EC] active:border-[#F4F2EC]"
+                    >
+                      <Pencil className="h-3.5 w-3.5" /> Rename
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ type: 'reset_password', team })}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#27272A] bg-[#09090B] px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[#F4F2EC] active:border-[#F4F2EC]"
+                    >
+                      <KeyRound className="h-3.5 w-3.5" /> Key
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ type: 'archive', team })}
+                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[#27272A] bg-[#09090B] px-3 text-[#A1A1AA] active:border-[#F4F2EC]"
+                      aria-label="Archive Team"
+                    >
+                      <Archive className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ type: 'delete_permanent', team })}
+                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-3 text-[#FF2E17] active:bg-[#FF2E17] active:text-white"
+                      aria-label="Delete Permanently"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ type: 'unarchive', team })}
+                      className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 border border-[#22C55E]/40 bg-[#22C55E]/10 px-3 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E] active:bg-[#22C55E] active:text-[#09090B]"
+                    >
+                      <ArchiveRestore className="h-3.5 w-3.5" /> Unarchive
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmTarget({ type: 'delete_permanent', team })}
+                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center border border-[#FF2E17]/40 bg-[#FF2E17]/10 px-3.5 text-[#FF2E17] active:bg-[#FF2E17] active:text-white"
+                      aria-label="Delete Permanently"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Hairline Teams Table */}
+      <div className="hidden border border-[#222226] bg-[#0D0D10] md:block">
         <Table>
           <TableHeader>
             <TableRow className="border-[#222226] hover:bg-transparent">
@@ -477,7 +581,7 @@ export function TeamManager({
                   onChange={(e) =>
                     setRenameTarget({ ...renameTarget, name: e.target.value })
                   }
-                  className="w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 font-mono text-sm text-[#F4F2EC] focus:border-[#F4F2EC] focus:outline-none"
+                  className="min-h-[48px] w-full border border-[#27272A] bg-[#0D0D10] px-4 py-3 font-mono text-base text-[#F4F2EC] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
                 />
               </div>
 
@@ -486,14 +590,14 @@ export function TeamManager({
                   type="button"
                   disabled={actionLoading}
                   onClick={() => setRenameTarget(null)}
-                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
+                  className="min-h-[44px] border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] active:border-[#F4F2EC] sm:hover:border-[#F4F2EC]"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading || !renameTarget.name.trim()}
-                  className="inline-flex items-center justify-center bg-[#F4F2EC] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white disabled:opacity-50"
+                  className="inline-flex min-h-[44px] items-center justify-center bg-[#F4F2EC] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white disabled:opacity-50 sm:hover:bg-[#FF2E17] sm:hover:text-white"
                 >
                   {actionLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   Save Name
@@ -533,7 +637,7 @@ export function TeamManager({
                   type="button"
                   disabled={actionLoading}
                   onClick={() => setConfirmTarget(null)}
-                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
+                  className="min-h-[44px] border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] active:border-[#F4F2EC] sm:hover:border-[#F4F2EC]"
                 >
                   Cancel
                 </button>
@@ -541,7 +645,7 @@ export function TeamManager({
                   type="button"
                   disabled={actionLoading}
                   onClick={submitConfirmAction}
-                  className={`inline-flex items-center justify-center px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] transition-colors ${dialogMeta.btnClass}`}
+                  className={`inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] transition-colors ${dialogMeta.btnClass}`}
                 >
                   {actionLoading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   {dialogMeta.confirmLabel}
@@ -582,7 +686,7 @@ export function TeamManager({
                 <button
                   type="button"
                   onClick={() => copyText('Login ID', credentialModal.loginId)}
-                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
+                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] active:border-[#F4F2EC] active:text-[#F4F2EC] sm:h-9 sm:w-9 sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Login ID' ? (
                     <Check className="h-4 w-4 text-[#22C55E]" />
@@ -604,7 +708,7 @@ export function TeamManager({
                 <button
                   type="button"
                   onClick={() => copyText('Password', credentialModal.password)}
-                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
+                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] active:border-[#F4F2EC] active:text-[#F4F2EC] sm:h-9 sm:w-9 sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Password' ? (
                     <Check className="h-4 w-4 text-[#22C55E]" />
@@ -622,7 +726,7 @@ export function TeamManager({
                     `Team: ${credentialModal.teamName}\nLogin ID: ${credentialModal.loginId}\nPassword: ${credentialModal.password}`
                   )
                 }
-                className="flex w-full items-center justify-center gap-2 bg-[#F4F2EC] py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
+                className="flex min-h-[48px] w-full items-center justify-center gap-2 bg-[#F4F2EC] py-3.5 font-mono text-xs font-bold uppercase tracking-[0.18em] text-[#09090B] transition-colors active:bg-[#FF2E17] active:text-white sm:hover:bg-[#FF2E17] sm:hover:text-white"
               >
                 <Copy className="h-3.5 w-3.5" /> Copy Both Credentials
               </button>

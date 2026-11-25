@@ -178,30 +178,30 @@ export default async function AdminDashboardPage() {
       </section>
 
       {/* Tabs Workspace */}
-      <main className="mx-auto max-w-[1440px] px-6 py-8 lg:px-10">
-        <Tabs defaultValue="teams" className="flex w-full flex-col gap-8">
-          <TabsList className="h-auto w-full justify-start gap-0 rounded-none border-b border-[#222226] bg-transparent p-0">
+      <main className="pb-safe mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
+        <Tabs defaultValue="teams" className="flex w-full flex-col gap-6 sm:gap-8">
+          <TabsList className="no-scrollbar flex h-auto w-full justify-start gap-0 overflow-x-auto rounded-none border-b border-[#222226] bg-transparent p-0">
             <TabsTrigger
               value="teams"
-              className="rounded-none border-b-2 border-transparent px-5 py-3.5 font-mono text-xs uppercase tracking-[0.16em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC]"
+              className="min-h-[44px] shrink-0 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC] sm:px-5 sm:text-xs"
             >
-              Teams &amp; Credentials
+              Teams ({(teams ?? []).length})
             </TabsTrigger>
             <TabsTrigger
               value="votes"
-              className="rounded-none border-b-2 border-transparent px-5 py-3.5 font-mono text-xs uppercase tracking-[0.16em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC]"
+              className="min-h-[44px] shrink-0 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC] sm:px-5 sm:text-xs"
             >
-              Vote Monitor ({voteRows.length})
+              Votes ({voteRows.length})
             </TabsTrigger>
             <TabsTrigger
               value="reveal"
-              className="rounded-none border-b-2 border-transparent px-5 py-3.5 font-mono text-xs uppercase tracking-[0.16em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC]"
+              className="min-h-[44px] shrink-0 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC] sm:px-5 sm:text-xs"
             >
-              Reveal &amp; Archive
+              Reveal
             </TabsTrigger>
             <TabsTrigger
               value="admins"
-              className="rounded-none border-b-2 border-transparent px-5 py-3.5 font-mono text-xs uppercase tracking-[0.16em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC]"
+              className="min-h-[44px] shrink-0 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 font-mono text-[11px] uppercase tracking-[0.14em] text-[#8E8E93] data-[state=active]:border-[#FF2E17] data-[state=active]:bg-transparent data-[state=active]:text-[#F4F2EC] sm:px-5 sm:text-xs"
             >
               Admins ({(admins ?? []).length})
             </TabsTrigger>
