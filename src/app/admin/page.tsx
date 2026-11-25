@@ -43,7 +43,7 @@ export default async function AdminDashboardPage() {
     await Promise.all([
       adminClient
         .from('teams')
-        .select('id, event_id, team_name, team_code, is_active, has_voted, created_at')
+        .select('id, event_id, team_name, team_code, is_active, created_at')
         .eq('event_id', currentEvent.id)
         .order('created_at', { ascending: true }),
       adminClient
@@ -214,6 +214,9 @@ export default async function AdminDashboardPage() {
 
           <TabsContent value="teams">
             <TeamManager
+              key={(teams ?? [])
+                .map((team) => `${team.id}:${team.team_name}:${team.is_active}`)
+                .join('|')}
               eventId={currentEvent.id}
               initialTeams={(teams ?? []) as AdminTeamRow[]}
             />
@@ -232,6 +235,9 @@ export default async function AdminDashboardPage() {
 
           <TabsContent value="admins">
             <AdminManager
+              key={(admins ?? [])
+                .map((admin) => `${admin.user_id}:${admin.email}:${admin.display_name}`)
+                .join('|')}
               initialAdmins={(admins ?? []) as AdminRow[]}
               currentAdminId={auth.user.id}
             />

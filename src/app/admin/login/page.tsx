@@ -88,7 +88,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@domain.com"
-                className="w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 font-mono text-sm text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
+                className="min-h-[48px] w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
               />
             </div>
 
@@ -107,12 +107,12 @@ export default function AdminLoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 pr-12 font-mono text-sm text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none"
+                  className="min-h-[48px] w-full border border-[#27272A] bg-[#09090B] px-4 py-3.5 pr-12 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:border-[#F4F2EC] focus:outline-none sm:text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8E8E93] transition-colors hover:text-[#F4F2EC]"
+                  className="absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-[#8E8E93] transition-colors hover:text-[#F4F2EC]"
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>

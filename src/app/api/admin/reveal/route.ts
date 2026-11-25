@@ -79,7 +79,7 @@ export async function POST(req: Request) {
   }
 
   // Advance synchronized reveal stage
-  const { error: updateErr } = await adminClient
+  const { data: updatedEvent, error: updateErr } = await adminClient
     .from('events')
     .update({
       status: 'revealing',
@@ -87,9 +87,16 @@ export async function POST(req: Request) {
       reveal_started_at: event.reveal_started_at ?? new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', event.id);
+    .eq('id', event.id)
+    .eq('reveal_stage', event.reveal_stage)
+    .in('status', ['voting_completed', 'revealing'])
+    .select('id')
+    .maybeSingle();
 
-  if (updateErr) {
+  if (updateErr || !updatedEvent) {
+    if (!updateErr) {
+      return NextResponse.json({ error: 'Reveal stage changed. Refresh and try again.' }, { status: 409 });
+    }
     return NextResponse.json({ error: 'Failed to advance reveal stage.' }, { status: 500 });
   }
 

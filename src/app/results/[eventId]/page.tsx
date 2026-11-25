@@ -14,7 +14,6 @@ import {
 import {
   LiveTimecode,
   CornerMarks,
-  SegmentedProgressBar,
 } from '@/components/ui/BroadcastPrimitives';
 import type { ResultsSnapshot } from '@/types/database';
 
@@ -40,7 +39,7 @@ export default async function ArchivedEventDetailPage({
   const third = snap.top_three.filter((t) => t.rank === 3);
 
   return (
-    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-dvh bg-[#09090B] text-[#F4F2EC]">
       <header className="border-b border-[#222226]">
         <div className="mx-auto flex max-w-[1440px] items-stretch justify-between">
           <Link
@@ -123,7 +122,7 @@ export default async function ArchivedEventDetailPage({
           <CornerMarks />
           <div className="p-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-              ACTIVE TEAMS
+              PARTICIPATING TEAMS
             </p>
             <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
               {String(snap.participating_team_count).padStart(2, '0')}
@@ -131,27 +130,21 @@ export default async function ArchivedEventDetailPage({
           </div>
           <div className="p-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-              VALID VOTES
+              TOTAL AUDIENCE VOTES
             </p>
             <p className="mt-2 font-display text-5xl font-extrabold tabular-nums text-[#FF2E17]">
               {String(snap.valid_vote_count).padStart(2, '0')}
             </p>
           </div>
           <div className="p-6">
-            <div className="flex items-baseline justify-between">
-              <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
-                COMPLETION
-              </p>
-              <span className="font-mono text-sm font-bold tabular-nums text-[#F4F2EC]">
-                {snap.voting_completion_percentage}%
-              </span>
-            </div>
-            <div className="mt-5">
-              <SegmentedProgressBar
-                percentage={Number(snap.voting_completion_percentage)}
-                segments={20}
-              />
-            </div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-[#8E8E93]">
+              AVERAGE VOTES PER TEAM
+            </p>
+            <p className="mt-2 font-display text-5xl font-extrabold tabular-nums">
+              {snap.participating_team_count > 0
+                ? (snap.valid_vote_count / snap.participating_team_count).toFixed(1)
+                : '0.0'}
+            </p>
           </div>
         </section>
 

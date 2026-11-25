@@ -4,7 +4,6 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import {
   LiveTimecode,
   CornerMarks,
-  SegmentedProgressBar,
 } from '@/components/ui/BroadcastPrimitives';
 import type { ResultsSnapshot } from '@/types/database';
 
@@ -18,7 +17,7 @@ export default async function ResultsArchivePage() {
   const snapshots = (data ?? []) as ResultsSnapshot[];
 
   return (
-    <div className="broadcast-grain min-h-screen bg-[#09090B] text-[#F4F2EC]">
+    <div className="broadcast-grain min-h-dvh bg-[#09090B] text-[#F4F2EC]">
       <header className="border-b border-[#222226]">
         <div className="mx-auto flex max-w-[1440px] items-stretch justify-between">
           <Link
@@ -72,16 +71,9 @@ export default async function ResultsArchivePage() {
                           {snap.event_name}
                         </h2>
                       </div>
-                      <span className="border border-[#22C55E]/30 bg-[#22C55E]/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#22C55E]">
-                        {snap.voting_completion_percentage}% VOTED
+                      <span className="border border-[#222226] bg-[#09090B] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-[#FF2E17]">
+                        {snap.valid_vote_count} AUDIENCE VOTES
                       </span>
-                    </div>
-
-                    <div className="mt-4">
-                      <SegmentedProgressBar
-                        percentage={Number(snap.voting_completion_percentage)}
-                        segments={24}
-                      />
                     </div>
 
                     <div className="mt-5 divide-y divide-[#222226] border border-[#222226] bg-[#09090B] font-mono text-xs">

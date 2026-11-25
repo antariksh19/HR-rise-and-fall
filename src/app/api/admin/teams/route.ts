@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/admin';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { generateSecurePassword, generateTeamCode, teamCodeToEmail } from '@/lib/auth/credentials';
+import { generateTeamCode } from '@/lib/auth/credentials';
 
 const createTeamSchema = z.object({
   eventId: z.string().uuid(),
@@ -22,18 +22,6 @@ export async function POST(req: Request) {
 
   const adminClient = createAdminClient();
   const teamCode = generateTeamCode();
-  const plainPassword = generateSecurePassword(12);
-
-  const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
-    email: teamCodeToEmail(teamCode),
-    password: plainPassword,
-    email_confirm: true,
-    user_metadata: { role: 'team', team_code: teamCode },
-  });
-
-  if (authError || !authData.user) {
-    return NextResponse.json({ error: 'Failed to provision team login account.' }, { status: 500 });
-  }
 
   const { data: team, error: teamError } = await adminClient
     .from('teams')
@@ -41,14 +29,12 @@ export async function POST(req: Request) {
       event_id: parsed.data.eventId,
       team_name: parsed.data.teamName,
       team_code: teamCode,
-      auth_user_id: authData.user.id,
       is_active: true,
     })
-    .select('id, event_id, team_name, team_code, is_active, has_voted, created_at')
+    .select('id, event_id, team_name, team_code, is_active, created_at')
     .single();
 
   if (teamError) {
-    await adminClient.auth.admin.deleteUser(authData.user.id);
     return NextResponse.json({ error: 'Failed to save team to database.' }, { status: 500 });
   }
 
@@ -61,11 +47,5 @@ export async function POST(req: Request) {
     details: { team_name: team.team_name, team_code: teamCode },
   });
 
-  return NextResponse.json(
-    {
-      team,
-      credentials: { loginId: teamCode, password: plainPassword },
-    },
-    { status: 201 }
-  );
+  return NextResponse.json({ team }, { status: 201 });
 }

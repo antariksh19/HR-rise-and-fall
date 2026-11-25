@@ -20,16 +20,29 @@ export interface VoteRecordRow {
   created_at: string;
 }
 
+function csvCell(value: string): string {
+  const safeValue = /^[\s]*[=+\-@]/.test(value) ? `'${value}` : value;
+  return `"${safeValue.replace(/"/g, '""')}"`;
+}
+
+function formatVoteTime(value: string): string {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'UTC',
+    dateStyle: 'medium',
+    timeStyle: 'medium',
+  }).format(new Date(value));
+}
+
 export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
   function handleExportCsv() {
-    const headers = ['Voter Team', 'Voter Code', 'Voted For', 'Target Code', 'Status', 'Timestamp'];
+    const headers = ['Voter Name', 'Device Code', 'Target Team', 'Target Code', 'Status', 'Timestamp (UTC)'];
     const rows = votes.map((v) => [
-      `"${v.voter_name.replace(/"/g, '""')}"`,
-      v.voter_code,
-      `"${v.target_name.replace(/"/g, '""')}"`,
-      v.target_code,
-      v.status,
-      new Date(v.created_at).toISOString(),
+      csvCell(v.voter_name),
+      csvCell(v.voter_code),
+      csvCell(v.target_name),
+      csvCell(v.target_code),
+      csvCell(v.status),
+      csvCell(new Date(v.created_at).toISOString()),
     ]);
 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -78,7 +91,7 @@ export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
                   ● {vote.status}
                 </span>
                 <span className="text-[#71717A]">
-                  {new Date(vote.created_at).toLocaleTimeString()}
+                  {formatVoteTime(vote.created_at)}
                 </span>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-2">
@@ -107,10 +120,10 @@ export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
           <TableHeader>
             <TableRow className="border-[#222226] hover:bg-transparent">
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
-                Voter Team
+                Voter Name / Device
               </TableHead>
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
-                Saved Team
+                Target Team
               </TableHead>
               <TableHead className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#8E8E93]">
                 Status
@@ -164,7 +177,7 @@ export function VoteMonitorTable({ votes }: { votes: VoteRecordRow[] }) {
                     )}
                   </TableCell>
                   <TableCell className="text-right font-mono text-xs text-[#8E8E93]">
-                    {new Date(vote.created_at).toLocaleTimeString()}
+                    {formatVoteTime(vote.created_at)}
                   </TableCell>
                 </TableRow>
               ))

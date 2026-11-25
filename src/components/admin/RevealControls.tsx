@@ -89,7 +89,7 @@ export function RevealControls({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to reset event.');
 
-      toast.success('Event reset to Not Started. All teams can vote again.');
+      toast.success('Event reset to Not Started. Audience voting can be restarted.');
       setResetConfirmOpen(false);
       router.refresh();
     } catch (err) {
@@ -275,7 +275,7 @@ export function RevealControls({
               type="button"
               disabled={loading}
               onClick={() => setResetConfirmOpen(false)}
-              className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
+              className="min-h-[44px] border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
             >
               Cancel
             </button>
@@ -283,7 +283,7 @@ export function RevealControls({
               type="button"
               disabled={loading}
               onClick={handleResetEvent}
-              className="inline-flex items-center justify-center bg-[#FF2E17] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#DC2626]"
+              className="inline-flex min-h-[44px] items-center justify-center bg-[#FF2E17] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#DC2626]"
             >
               {loading ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
               Reset Event

@@ -21,22 +21,20 @@ export function VotingControls({ event }: { event: EventRecord }) {
   const [pendingAction, setPendingAction] = useState<VotingAction | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const remaining = Math.max(0, event.active_team_count - event.valid_vote_count);
-
   const modalConfig: Record<
     VotingAction,
     { title: string; description: string; warning?: string; confirmLabel: string; btnClass: string }
   > = {
     start_voting: {
       title: 'START LIVE VOTING?',
-      description: `All ${event.active_team_count} active teams in "${event.name}" will immediately be unlocked to submit their ballot.`,
+      description: `The audience ballot for "${event.name}" will open immediately.`,
       confirmLabel: 'Start Voting',
       btnClass: 'bg-[#F4F2EC] text-[#09090B] hover:bg-[#FF2E17] hover:text-white',
     },
     close_voting: {
       title: 'CLOSE VOTING NOW?',
       description: `No further ballots will be accepted for "${event.name}" once closed.`,
-      warning: remaining > 0 ? `${remaining} active team(s) have NOT voted yet.` : undefined,
+      warning: `${event.valid_vote_count} audience vote(s) have been recorded. Closing stops any further ballots.`,
       confirmLabel: 'Close Voting',
       btnClass: 'bg-[#FF2E17] text-white hover:bg-[#DC2626]',
     },
@@ -84,7 +82,7 @@ export function VotingControls({ event }: { event: EventRecord }) {
           <button
             type="button"
             onClick={() => setPendingAction('start_voting')}
-            className="inline-flex items-center gap-2 bg-[#F4F2EC] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
+            className="inline-flex min-h-[44px] items-center gap-2 bg-[#F4F2EC] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#09090B] transition-colors hover:bg-[#FF2E17] hover:text-white"
           >
             <Play className="h-3.5 w-3.5" /> Start Voting
           </button>
@@ -94,7 +92,7 @@ export function VotingControls({ event }: { event: EventRecord }) {
           <button
             type="button"
             onClick={() => setPendingAction('close_voting')}
-            className="inline-flex items-center gap-2 bg-[#FF2E17] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#DC2626]"
+            className="inline-flex min-h-[44px] items-center gap-2 bg-[#FF2E17] px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#DC2626]"
           >
             <Square className="h-3.5 w-3.5" /> Close Voting
           </button>
@@ -104,7 +102,7 @@ export function VotingControls({ event }: { event: EventRecord }) {
           <button
             type="button"
             onClick={() => setPendingAction('reset_voting')}
-            className="inline-flex items-center gap-2 border border-[#27272A] bg-[#111114] px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#F4F2EC] transition-colors hover:border-[#FF2E17] hover:text-[#FF2E17]"
+            className="inline-flex min-h-[44px] items-center gap-2 border border-[#27272A] bg-[#111114] px-4 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] text-[#F4F2EC] transition-colors hover:border-[#FF2E17] hover:text-[#FF2E17]"
           >
             <RotateCcw className="h-3.5 w-3.5" /> Reset Event
           </button>
@@ -141,7 +139,7 @@ export function VotingControls({ event }: { event: EventRecord }) {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => setPendingAction(null)}
-                  className="border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
+                  className="min-h-[44px] border border-[#27272A] px-4 py-2.5 font-mono text-xs uppercase tracking-[0.16em] text-[#F4F2EC] hover:border-[#F4F2EC]"
                 >
                   Cancel
                 </button>
@@ -149,7 +147,7 @@ export function VotingControls({ event }: { event: EventRecord }) {
                   type="button"
                   disabled={isSubmitting}
                   onClick={handleConfirm}
-                  className={`inline-flex items-center justify-center px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] transition-colors ${activeConfig.btnClass}`}
+                  className={`inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 font-mono text-xs font-bold uppercase tracking-[0.16em] transition-colors ${activeConfig.btnClass}`}
                 >
                   {isSubmitting ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
                   {activeConfig.confirmLabel}

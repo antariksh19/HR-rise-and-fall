@@ -76,10 +76,7 @@ export function EventHallDisplay({
   }, [toggleFullscreen]);
 
   useEffect(() => {
-    if (!isFullscreen) {
-      setHudVisible(true);
-      return;
-    }
+    if (!isFullscreen) return;
     let timer: ReturnType<typeof setTimeout>;
     const showAndReset = () => {
       setHudVisible(true);

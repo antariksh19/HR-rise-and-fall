@@ -20,7 +20,6 @@ import {
   getDeviceFingerprint,
   getCrossBrowserHardwareSignature,
   getOrCreatePersistentDeviceId,
-  isStandardizedIosDevice,
 } from '@/lib/device/fingerprint';
 import {
   LiveTimecode,
@@ -34,6 +33,24 @@ interface Props {
   initialTeams: TeamRecord[];
 }
 
+function readVotedFlag(eventId: string): boolean {
+  try {
+    return localStorage.getItem(`hr_rf_voted_${eventId}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeVotedFlag(eventId: string, voted: boolean): void {
+  try {
+    const key = `hr_rf_voted_${eventId}`;
+    if (voted) localStorage.setItem(key, '1');
+    else localStorage.removeItem(key);
+  } catch {
+    // The server-side vote check remains authoritative when storage is unavailable.
+  }
+}
+
 export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
   const { event, teams } = useEventRealtime(initialEvent, initialTeams);
   const [query, setQuery] = useState('');
@@ -45,7 +62,6 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
   const [deviceId, setDeviceId] = useState('');
   const [fingerprint, setFingerprint] = useState('');
   const [hardwareSignature, setHardwareSignature] = useState('');
-  const [isIos, setIsIos] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,41 +71,44 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
     let active = true;
 
     async function verifyDevice() {
-      const ios = isStandardizedIosDevice();
-      const [localId, fp, hwSig] = await Promise.all([
-        getOrCreatePersistentDeviceId(),
-        getDeviceFingerprint(),
-        getCrossBrowserHardwareSignature(),
-      ]);
-      if (!active) return;
-
-      setIsIos(ios);
-      setDeviceId(localId);
-      setFingerprint(fp);
-      setHardwareSignature(hwSig);
-
       try {
+        const [localId, fp, hwSig] = await Promise.all([
+          getOrCreatePersistentDeviceId(),
+          getDeviceFingerprint(),
+          getCrossBrowserHardwareSignature(),
+        ]);
+        if (!active) return;
+
+        setDeviceId(localId);
+        setFingerprint(fp);
+        setHardwareSignature(hwSig);
+
         const res = await fetch(
           `/api/vote?eventId=${initialEvent.id}&deviceId=${encodeURIComponent(
             localId
           )}&fingerprint=${encodeURIComponent(fp)}&hardwareSignature=${encodeURIComponent(
             hwSig
-          )}&isStandardizedIos=${ios ? '1' : '0'}`,
+          )}`,
           { cache: 'no-store' }
         );
+        if (!res.ok) throw new Error('Unable to verify device eligibility.');
         const data = await res.json();
         if (!active) return;
 
         const voted = Boolean(data.hasVoted);
         setHasVoted(voted);
-        if (voted) {
-          localStorage.setItem(`hr_rf_voted_${initialEvent.id}`, '1');
+        writeVotedFlag(initialEvent.id, voted);
+      } catch (verificationError) {
+        if (!active) return;
+        if (readVotedFlag(initialEvent.id)) {
+          setHasVoted(true);
         } else {
-          localStorage.removeItem(`hr_rf_voted_${initialEvent.id}`);
+          setError(
+            verificationError instanceof Error
+              ? verificationError.message
+              : 'Unable to verify device eligibility. Please refresh and try again.'
+          );
         }
-      } catch {
-        const localFlag = localStorage.getItem(`hr_rf_voted_${initialEvent.id}`);
-        if (active && localFlag === '1') setHasVoted(true);
       } finally {
         if (active) setCheckingDevice(false);
       }
@@ -145,21 +164,20 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
           deviceId,
           fingerprint,
           hardwareSignature,
-          isStandardizedIos: isIos,
         }),
       });
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 409) {
           setHasVoted(true);
-          localStorage.setItem(`hr_rf_voted_${initialEvent.id}`, '1');
+          writeVotedFlag(initialEvent.id, true);
           setSelectedTeam(null);
         }
         throw new Error(data.error || 'Failed to submit vote.');
       }
 
       setHasVoted(true);
-      localStorage.setItem(`hr_rf_voted_${initialEvent.id}`, '1');
+      writeVotedFlag(initialEvent.id, true);
       setSelectedTeam(null);
       toast.success(`Thank you, ${cleanedName}! Your ballot is locked.`);
     } catch (err) {
@@ -179,7 +197,7 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
           <div className="flex min-w-0 items-center gap-3 px-4 py-3.5 sm:gap-4 sm:px-8 sm:py-4">
             <Link
               href="/"
-              className="flex h-9 w-9 shrink-0 items-center justify-center border border-[#27272A] bg-[#0E0E12] text-[#A1A1AA] transition-colors active:border-[#F4F2EC] active:text-[#F4F2EC] sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
+              className="flex h-11 w-11 shrink-0 items-center justify-center border border-[#27272A] bg-[#0E0E12] text-[#A1A1AA] transition-colors active:border-[#F4F2EC] active:text-[#F4F2EC] sm:hover:border-[#F4F2EC] sm:hover:text-[#F4F2EC]"
               aria-label="Back to main stage"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -295,7 +313,7 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
                 <button
                   type="button"
                   onClick={() => setQuery('')}
-                  className="min-h-[36px] px-2 font-mono text-[11px] uppercase tracking-[0.16em] text-[#8E8E93] active:text-[#F4F2EC]"
+                  className="min-h-[44px] px-2 font-mono text-[11px] uppercase tracking-[0.16em] text-[#8E8E93] active:text-[#F4F2EC]"
                 >
                   Clear
                 </button>
@@ -319,7 +337,7 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
                         key={team.id}
                         layout
                         type="button"
-                        disabled={!isVotingLive}
+                        disabled={!isVotingLive || !deviceId || !fingerprint || !hardwareSignature}
                         onClick={() => setSelectedTeam(team)}
                         className={`group relative flex min-h-[140px] flex-col justify-between overflow-hidden border-b border-[#24242A] p-6 text-left transition-all duration-150 sm:min-h-[190px] sm:border-r sm:p-9 ${
                           isSelected
@@ -387,7 +405,7 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
                 VOTE FOR {selectedTeam.team_name}?
               </h3>
               <p className="mt-2 text-xs leading-relaxed text-[#A1A1AA] sm:text-sm">
-                Strictly one vote per device &amp; attendee. Your phone/email is encrypted and only used to prevent duplicate votes.
+                Strictly one vote per device &amp; attendee. Your phone/email is securely hashed and only used to prevent duplicate votes.
               </p>
 
               <div className="mt-5 space-y-4">
@@ -443,6 +461,9 @@ export function AudienceVotingDashboard({ initialEvent, initialTeams }: Props) {
                   type="submit"
                   disabled={
                     isSubmitting ||
+                    !deviceId ||
+                    !fingerprint ||
+                    !hardwareSignature ||
                     voterName.trim().length < 2 ||
                     voterContact.trim().length < 5
                   }

@@ -16,7 +16,27 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Audience voting deployment
+
+1. Apply `database/migrations/001_initial_schema.sql`, then
+   `database/migrations/002_audience_voting.sql` in the Supabase SQL editor.
+2. Set `VOTER_HASH_SALT` to a long random secret in every deployment environment. Keep
+   it stable while votes exist; changing it invalidates attendee contact hashes.
+3. Configure the trusted edge/reverse proxy to overwrite `X-Real-IP`. The vote API
+   intentionally does not trust `X-Forwarded-For` for its cross-browser device lock.
+4. Seed at least one row in `public.admin_users` for each administrator who needs
+   Control Room access. Teams do not receive Supabase Auth accounts.
+
+The migration keeps audience ballots private, updates the public vote counter through
+database triggers, and provides an atomic admin-only event reset.
+
+Run the production checks with:
+
+```bash
+npx tsc --noEmit
+npm run lint
+npm run build
+```
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 

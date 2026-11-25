@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   UserPlus,
@@ -56,10 +56,6 @@ export function AdminManager({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<AdminRow | null>(null);
   const [revoking, setRevoking] = useState(false);
-
-  useEffect(() => {
-    setAdmins(initialAdmins);
-  }, [initialAdmins]);
 
   async function handleAddAdmin(e: React.FormEvent) {
     e.preventDefault();
@@ -139,7 +135,7 @@ export function AdminManager({
           placeholder="NAME (OPTIONAL)"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+          className="bg-transparent px-4 py-4 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:text-xs"
         />
         <input
           type="email"
@@ -147,14 +143,14 @@ export function AdminManager({
           placeholder="ADMIN EMAIL"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+          className="bg-transparent px-4 py-4 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:text-xs"
         />
         <input
           type="text"
           placeholder="PASSWORD (BLANK = AUTO)"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="bg-transparent px-4 py-4 font-mono text-xs text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none"
+          className="bg-transparent px-4 py-4 font-mono text-base text-[#F4F2EC] placeholder:text-[#52525B] focus:outline-none sm:text-xs"
         />
         <button
           type="submit"
@@ -215,7 +211,10 @@ export function AdminManager({
                     ● ADMINISTRATOR
                   </TableCell>
                   <TableCell className="font-mono text-xs text-[#71717A]">
-                    {new Date(admin.created_at).toLocaleDateString()}
+                    {new Intl.DateTimeFormat('en-GB', {
+                      timeZone: 'UTC',
+                      dateStyle: 'medium',
+                    }).format(new Date(admin.created_at))}
                   </TableCell>
                   <TableCell className="text-right">
                     {!isSelf && (
@@ -312,7 +311,7 @@ export function AdminManager({
                 <button
                   type="button"
                   onClick={() => copyText('Email', credentialModal.email)}
-                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
+                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Email' ? (
                     <Check className="h-4 w-4 text-[#22C55E]" />
@@ -334,7 +333,7 @@ export function AdminManager({
                 <button
                   type="button"
                   onClick={() => copyText('Password', credentialModal.password)}
-                  className="flex h-9 w-9 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
+                  className="flex h-11 w-11 items-center justify-center border border-[#27272A] text-[#A1A1AA] hover:border-[#F4F2EC] hover:text-[#F4F2EC]"
                 >
                   {copiedField === 'Password' ? (
                     <Check className="h-4 w-4 text-[#22C55E]" />

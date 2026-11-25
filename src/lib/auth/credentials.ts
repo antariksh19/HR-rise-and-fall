@@ -20,7 +20,3 @@ export function generateSecurePassword(length = 12): string {
   }
   return password;
 }
-
-export function teamCodeToEmail(teamCode: string): string {
-  return `${teamCode.trim().toLowerCase()}@team.hrrisefall.internal`;
-}

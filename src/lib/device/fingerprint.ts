@@ -6,16 +6,14 @@ const IDB_STORE = 'meta';
 
 function getOsFamily(): string {
   const ua = navigator.userAgent || '';
-  if (/iphone|ipad|ipod/i.test(ua)) return 'ios';
+  if (/iphone|ipad|ipod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+    return 'ios';
+  }
   if (/android/i.test(ua)) return 'android';
   if (/windows/i.test(ua)) return 'windows';
   if (/mac os x|macintosh/i.test(ua)) return 'macos';
   if (/linux/i.test(ua)) return 'linux';
   return 'other';
-}
-
-export function isStandardizedIosDevice(): boolean {
-  return getOsFamily() === 'ios';
 }
 
 function readIdbDeviceId(): Promise<string | null> {
@@ -31,8 +29,19 @@ function readIdbDeviceId(): Promise<string | null> {
         const db = req.result;
         const tx = db.transaction(IDB_STORE, 'readonly');
         const getReq = tx.objectStore(IDB_STORE).get(DEVICE_KEY);
-        getReq.onsuccess = () => resolve((getReq.result as string) || null);
-        getReq.onerror = () => resolve(null);
+        getReq.onsuccess = () => {
+          const value = (getReq.result as string) || null;
+          db.close();
+          resolve(value);
+        };
+        getReq.onerror = () => {
+          db.close();
+          resolve(null);
+        };
+        tx.onabort = () => {
+          db.close();
+          resolve(null);
+        };
       };
       req.onerror = () => resolve(null);
     } catch {
@@ -54,8 +63,18 @@ function writeIdbDeviceId(id: string): Promise<void> {
         const db = req.result;
         const tx = db.transaction(IDB_STORE, 'readwrite');
         tx.objectStore(IDB_STORE).put(id, DEVICE_KEY);
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => resolve();
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => {
+          db.close();
+          resolve();
+        };
+        tx.onabort = () => {
+          db.close();
+          resolve();
+        };
       };
       req.onerror = () => resolve();
     } catch {
@@ -74,12 +93,19 @@ export async function getOrCreatePersistentDeviceId(): Promise<string> {
   }
 
   const idbVal = await readIdbDeviceId();
+  const secureCrypto = globalThis.crypto;
   const resolved =
     localVal ||
     idbVal ||
-    (typeof crypto !== 'undefined' && crypto.randomUUID
-      ? crypto.randomUUID()
-      : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`);
+    (secureCrypto?.randomUUID
+      ? secureCrypto.randomUUID()
+      : (() => {
+          if (!secureCrypto?.getRandomValues) {
+            throw new Error('Secure device identity generation is unavailable.');
+          }
+          const bytes = secureCrypto.getRandomValues(new Uint8Array(16));
+          return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+        })());
 
   try {
     localStorage.setItem(DEVICE_KEY, resolved);
@@ -124,56 +150,15 @@ function getWebGLRenderer(): string {
   }
 }
 
-async function getAudioSignature(): Promise<string> {
-  try {
-    const OfflineCtx =
-      window.OfflineAudioContext ||
-      (window as unknown as { webkitOfflineAudioContext?: typeof OfflineAudioContext })
-        .webkitOfflineAudioContext;
-    if (!OfflineCtx) return 'no-audio';
-
-    const ctx = new OfflineCtx(1, 4096, 44100);
-    const osc = ctx.createOscillator();
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(10000, ctx.currentTime);
-
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.setValueAtTime(-50, ctx.currentTime);
-    compressor.knee.setValueAtTime(40, ctx.currentTime);
-    compressor.ratio.setValueAtTime(12, ctx.currentTime);
-    compressor.attack.setValueAtTime(0, ctx.currentTime);
-    compressor.release.setValueAtTime(0.25, ctx.currentTime);
-
-    osc.connect(compressor);
-    compressor.connect(ctx.destination);
-    osc.start(0);
-
-    const buffer = await ctx.startRendering();
-    const data = buffer.getChannelData(0);
-    let sum = 0;
-    for (let i = 500; i < 1500; i++) {
-      sum += Math.abs(data[i]);
-    }
-    return sum.toFixed(6);
-  } catch {
-    return 'audio-err';
-  }
-}
-
 async function sha256(input: string): Promise<string> {
-  if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const encoded = new TextEncoder().encode(input);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', encoded);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, '0'))
-      .join('');
+  if (!globalThis.crypto?.subtle) {
+    throw new Error('Secure browser fingerprinting is unavailable.');
   }
-  let hash = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    hash ^= input.charCodeAt(i);
-    hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-  }
-  return (hash >>> 0).toString(16).padStart(16, '0');
+  const encoded = new TextEncoder().encode(input);
+  const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', encoded);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /** Browser-independent hardware signature (consistent across Chrome, Edge, Firefox) */
@@ -202,7 +187,6 @@ export async function getCrossBrowserHardwareSignature(): Promise<string> {
 
 /** Browser-level fingerprint (blocks Incognito & cookie clears in the same browser) */
 export async function getDeviceFingerprint(): Promise<string> {
-  const audio = await getAudioSignature();
   const traits = [
     navigator.userAgent,
     navigator.language,
@@ -211,7 +195,6 @@ export async function getDeviceFingerprint(): Promise<string> {
     Intl.DateTimeFormat().resolvedOptions().timeZone || '',
     getWebGLRenderer(),
     getCanvasSignature(),
-    audio,
   ].join('||');
 
   return sha256(traits);

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/admin';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 const eventActionSchema = z.discriminatedUnion('action', [
   z.object({ action: z.literal('start_voting'), eventId: z.string().uuid() }),
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq('id', ev.id)
+      .eq('status', 'not_started')
       .select('*')
       .single();
 
@@ -99,70 +101,18 @@ export async function POST(req: Request) {
   }
 
   if (parsed.data.action === 'reset_voting') {
-    const { data: ev } = await adminClient
-      .from('events')
-      .select('id, status, valid_vote_count')
-      .eq('id', parsed.data.eventId)
-      .single();
-
-    if (!ev) {
-      return NextResponse.json({ error: 'Event not found.' }, { status: 404 });
-    }
-
-    // 1. Remove any prior results snapshot for this single event so future runs archive cleanly
-    await adminClient.from('results_snapshots').delete().eq('event_id', ev.id);
-
-    // 2. Delete all votes for this event
-    const { error: delError } = await adminClient
-      .from('votes')
-      .delete()
-      .eq('event_id', ev.id);
-
-    if (delError) {
-      return NextResponse.json({ error: 'Failed to clear event votes.' }, { status: 500 });
-    }
-
-    // 3. Reset has_voted flag for all teams in this event
-    const { error: teamErr } = await adminClient
-      .from('teams')
-      .update({ has_voted: false, updated_at: new Date().toISOString() })
-      .eq('event_id', ev.id);
-
-    if (teamErr) {
-      return NextResponse.json({ error: 'Failed to reset team vote statuses.' }, { status: 500 });
-    }
-
-    // 4. Reset event status, reveal stage, and counters back to Not Started
-    const { data: updated, error: evErr } = await adminClient
-      .from('events')
-      .update({
-        status: 'not_started',
-        reveal_stage: 'locked',
-        valid_vote_count: 0,
-        voting_started_at: null,
-        voting_closed_at: null,
-        reveal_started_at: null,
-        reveal_completed_at: null,
-        completed_at: null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', ev.id)
-      .select('*')
-      .single();
-
-    if (evErr) {
-      return NextResponse.json({ error: 'Failed to reset event state.' }, { status: 500 });
-    }
-
-    // 5. Record audit log
-    await adminClient.from('admin_activity_logs').insert({
-      admin_user_id: auth.user.id,
-      event_id: ev.id,
-      action: 'EVENT_RESET',
-      entity_type: 'event',
-      entity_id: ev.id,
-      details: { previous_status: ev.status, cleared_votes: ev.valid_vote_count },
+    const supabase = await createServerSupabaseClient();
+    const { data: updated, error } = await supabase.rpc('reset_event_voting', {
+      p_event_id: parsed.data.eventId,
     });
+
+    if (error) {
+      const status = error.message.includes('EVENT_NOT_FOUND') ? 404 : 500;
+      return NextResponse.json(
+        { error: status === 404 ? 'Event not found.' : 'Failed to reset event.' },
+        { status }
+      );
+    }
 
     return NextResponse.json({ event: updated });
   }

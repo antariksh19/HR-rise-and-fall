@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Plus,
@@ -36,7 +36,6 @@ export interface AdminTeamRow {
   team_name: string;
   team_code: string;
   is_active: boolean;
-  has_voted: boolean;
   created_at: string;
 }
 
@@ -63,10 +62,6 @@ export function TeamManager({
     team: AdminTeamRow;
   } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-
-  useEffect(() => {
-    setTeams(initialTeams);
-  }, [initialTeams]);
 
   const filteredTeams = teams.filter((t) => {
     const matchesQuery =
@@ -251,7 +246,7 @@ export function TeamManager({
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="min-h-[36px] px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
+              className="min-h-[44px] px-2 font-mono text-[10px] uppercase tracking-[0.16em] text-[#8E8E93] active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]"
             >
               Clear
             </button>
@@ -263,7 +258,7 @@ export function TeamManager({
               key={tab}
               type="button"
               onClick={() => setStatusFilter(tab)}
-              className={`min-h-[36px] shrink-0 px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
+              className={`min-h-[44px] shrink-0 px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-[0.16em] transition-colors ${
                 statusFilter === tab
                   ? 'bg-[#F4F2EC] text-[#09090B]'
                   : 'border border-[#27272A] text-[#8E8E93] active:text-[#F4F2EC] sm:hover:text-[#F4F2EC]'
@@ -292,7 +287,7 @@ export function TeamManager({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="font-mono text-[10px] uppercase tracking-[0.18em] text-[#71717A]">
-                    #{String(idx + 1).padStart(2, '0')} // {team.team_code}
+                    #{String(idx + 1).padStart(2, '0')} {'//'} {team.team_code}
                   </p>
                   <p className="mt-1 truncate font-display text-3xl font-extrabold uppercase leading-none text-[#F4F2EC]">
                     {team.team_name}

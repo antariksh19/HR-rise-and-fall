@@ -124,10 +124,5 @@ export function useEventRealtime(
     };
   }, [event?.id, supabase, refreshAuthoritativeState, refreshTeams, highlightTeam]);
 
-  const progressPercentage =
-    event && event.active_team_count > 0
-      ? Math.min(100, Number(((event.valid_vote_count / event.active_team_count) * 100).toFixed(1)))
-      : 0;
-
-  return { event, teams, recentTeamIds, progressPercentage, connectionStatus };
+  return { event, teams, recentTeamIds, connectionStatus };
 }
